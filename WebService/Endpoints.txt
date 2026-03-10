@@ -1,0 +1,117 @@
+ENDPOINTS
+    RESERVA
+        1 CREAR RESERVA: 
+            - URL: POST http://localhost:3000/api/reservas/create
+            - BODY: {
+                    "dia_entrada": "2025-02-01",
+                    "dia_salida": "2025-02-05",
+                    "totalPersonas": 3,
+                    "tipoRegimen": "BB",
+                    "codigo": "TR",
+                    "idCliente": 1
+                    }
+        2. OBTENER TODAS LAS RESERVAS ENTRE UNAS FECHAS SELECCIONADAS:
+            - URL: GET http://localhost:3000/api/reservas/entre_fechas
+            - BODY: {
+                    "dia_1": "2025-01-01",
+                    "dia_2": "2025-02-06"
+                    }
+        3. BORRAR UNA RESERVA CON EL ID DE LA RESERVA:
+            - URL: DELETE http://localhost:3000/api/reservas/1(:idReserva)
+            - BODY:
+
+        4. ACTUALIZAR UNA RESERVA CON DATOS PARCIALES, NO HACE FALTA QUE SEA TODA LOS DATOS DE LA RESERVA:
+            - URL PATCH http://localhost:3000/api/reservas/2(:idReserva)
+            - BODY:{
+                    "dia_entrada": "2025-03-02",
+                    "dia_salida": "2025-03-08",
+                    "tipoRegimen": "HP",
+                    "pagado": 1
+                    }
+
+        5. ASIGNAR HABITACION A UNA RESERVA
+            - URL: PATCH http://localhost:3000/api/reservas/asignar/2(:idReserva)
+            - BODY: {
+                     "idHabitacion": 1
+                    }
+
+    CLIENTE:
+        1.CREAR CLIENTE:
+            - URL: POST http://localhost:3000/api/clientes/create
+            - BODY:{
+                    "nombre": "Xavi",
+                    "apellido": "Miguel",
+                    "dni": "432156789C"
+                    }
+        2.ACTUALIZAR CLIENTE:
+            - URL: PUT http://localhost:3000/api/cliente/update/2(:idCliente)
+            - BODY: {
+                     "nombre":"Pepito",
+                     "apellido": "",
+                     "dni": "",
+                     "cif": ""
+                    }
+
+        3.OBTENER CLIENTE CON SU ID:
+            - URL: GET http://localhost:3000/api/clientes/2(:idCliente)
+        
+        4.BORRAR CLIENTE:
+            - URL: DELETE http://localhost:3000/api/clientes/3(:idCliente)
+        
+        5.OBTENER RESERVAS DADO UN CLIENTE:
+            - URL: GET http://localhost:3000/api/clientes/reservas/1(:idCliente)
+        
+
+    HABITACIONES:
+        1. CREAR HABITACIONES DE UN TIPO DE HAB:
+            - URL: POST http://localhost:3000/api/habitaciones/create/10 (:cantidad)
+            - BODY: {
+                     "codigo":"DV"
+                    }
+        2. CONSULTAR LA DISPONIBILIDAD EN UNAS FECHAS
+            - URL: GET http://localhost:3000/api/habitaciones/disponibilidad
+            - BODY: {
+                     "dia_entrada": "2025-03-02",
+                     "dia_salida": "2025-03-08",
+                     "codigo": "DV"
+                    }
+    
+    TIPO_HABITACION:
+        1. OBTENER TODOS LOS TIPOS DE HABITACION:
+            - URL: GET http://localhost:3000/api/tipo_habitacion/
+        2. CREAR TIPO DE HABITACION
+            - URL: POST http://localhost:3000/api/tipo_habitacion/create
+            - BODY: {
+                     "codigo": "QV",
+                     "denominacion": "Cuadruple Vista Mar",
+                     "pax": 4,
+                     "precio": 200
+                    }
+        3. CONSULTAR DISPONIBILIDAD DE TIPO DE HABITACION:
+            - URL: GET http://localhost:3000/api/tipo_habitacion/disponibilidad?pax=3&dia_entrada=2025-03-02&dia_salida=2025-03-08
+    REGIMEN:
+        1. OBTENER TODOS LOS REGIMENES:
+            - URL: GET http://localhost:3000/api/regimen/
+        2. CREAR REGIMEN
+            - URL: POST http://localhost:3000/api/regimen/create
+            - BODY: {
+                     "tipoRegimen": "B",
+                     "precio": 10
+                    }
+        3. MODIFICAR EL PRECIO DE UN REGIMEN
+            - URL: PATCH http://localhost:3000/api/regimen/B(:tipoRegimen)
+            - BODY: {
+                     "precio": 15
+                    }
+
+
+
+
+
+Respuestas de estado:
+    · 200-299: Endpoint funciona correctamente
+    · 400-499: Endpoint falla por erro del cliente a la hora de indicar los datos para realizar la consulta
+        - 400: Esta respuesta significa que el servidor no pudo interpretar la solicitud dada una sintaxis inválida.
+        - 404: El servidor no pudo encontrar el contenido solicitado. 
+    · 500-599: Endpoint falla por error con la conexion con la base de datos
+https://developer.mozilla.org/es/docs/Web/HTTP/Reference/Status

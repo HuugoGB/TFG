@@ -1,0 +1,21 @@
+{
+  "name": "motor-reservas-api",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Web Service REST para Motor de Reservas Hotelero",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:dev": "NODE_ENV=development nodemon index.js"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.3.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

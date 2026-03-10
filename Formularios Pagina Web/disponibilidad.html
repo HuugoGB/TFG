@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <style>
+
+body {
+    background: #f4f6f8;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* CONTENEDOR */
+#mostrarDisponibilidad {
+    max-width: 1100px;
+    margin: 60px auto;
+    padding: 0 20px;
+}
+
+#mostrarDisponibilidad ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* TARJETA HABITACIÓN */
+#mostrarDisponibilidad li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    padding: 30px;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+#mostrarDisponibilidad li:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* BLOQUE IZQUIERDO */
+.hab-info {
+    flex: 2;
+}
+
+.hab-info strong {
+    font-size: 22px;
+    color: #111;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.hab-info span {
+    display: block;
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+/* BLOQUE DERECHO (PRECIO + BOTÓN) */
+.hab-precio {
+    flex: 1;
+    text-align: right;
+}
+
+.precio-total {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 15px;
+}
+
+.precio-detalle {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 20px;
+}
+
+/* BOTÓN PREMIUM */
+.reservarBttn {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #b9935a, #8c6a3f);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.reservarBttn:hover {
+    background: linear-gradient(135deg, #a17f4c, #755833);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    #mostrarDisponibilidad li {
+        flex-direction: column;
+        text-align: left;
+    }
+
+    .hab-precio {
+        text-align: left;
+        margin-top: 20px;
+    }
+}
+
+</style>
+    </style>
+
+    <div id="mostrarDisponibilidad"></div>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+
+            const disponibilidad = JSON.parse(localStorage.getItem("disponibilidad"));
+            const diaEntrada = localStorage.getItem("diaEntrada");
+            const diaSalida = localStorage.getItem("diaSalida");
+            const tipoRegimen = localStorage.getItem("tipoRegimen");
+            const pax = localStorage.getItem("pax");
+
+            let precioRegimen = 0;
+            let precioServiciosExtras = 0;
+            const dias = Math.ceil(
+                    (new Date(diaSalida) - new Date(diaEntrada)) / (1000 * 60 * 60 * 24)
+                );
+
+            try {
+
+                // 🔹 PRECIO REGIMEN
+                const resPrecioRegimen = await fetch(
+                    "http://localhost:3000/api/regimen/precio?tipoRegimen=" + tipoRegimen
+                );
+
+                const dataPrecio = await resPrecioRegimen.json();
+
+                if (!dataPrecio.error) {
+                    precioRegimen = dataPrecio.precioRegimen;
+                }
+
+                // 🔹 PRECIO SERVICIOS EXTRA
+                const serviciosExtra = JSON.parse(localStorage.getItem("serviciosExtra")) || [];
+                
+                console.log("Dias:"+dias);
+
+                for (const servicioId of serviciosExtra) {
+
+                    const response = await fetch(
+                        "http://localhost:3000/api/servicio_extra/precio?idServicioExtra=" + servicioId
+                    );
+
+                    const result = await response.json();
+
+                    if (result.precioServicioExtra[0]) {
+
+                        if (result.precioServicioExtra[0].porDia) {
+                            precioServiciosExtras += result.precioServicioExtra[0].precio * dias;
+                        } else {
+                            precioServiciosExtras += result.precioServicioExtra[0].precio;
+                        }
+                    }
+                }
+                console.log("Precio servicios:"+precioServiciosExtras);
+
+                // 🔹 PINTAR DISPONIBILIDAD
+if (Array.isArray(disponibilidad) && disponibilidad.length > 0) {
+                    let html = `<ul>`;
+
+                    disponibilidad.forEach(hab => {
+
+                        let precioTotal =  Number(hab.precio)*dias + Number(precioRegimen)*dias + Number(precioServiciosExtras);
+
+                        
+                html += `
+<li>
+    <div class="hab-info">
+        <strong>${hab.denominacion}</strong>
+        <span>Capacidad: ${hab.pax} personas</span>
+        <span>Disponibles: ${hab.habitaciones_disponibles}</span>
+        <span>${dias} noches seleccionadas</span>
+    </div>
+
+    <div class="hab-precio">
+        <div class="precio-total">${precioTotal} €</div>
+        <div class="precio-detalle">Precio total estancia</div>
+        <button class="reservarBttn"
+                data-codigo="${hab.codigo}">
+            Reservar ahora
+        </button>
+    </div>
+</li>
+`;
+                
+                    });
+
+                    html += `</ul>`;
+                    document.getElementById("mostrarDisponibilidad").innerHTML = html;
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Error al calcular precios");
+            }
+
+        });
+    </script>
+
+    <script>
+        document.addEventListener("click", async function (e) {
+            if (!e.target.classList.contains("reservarBttn")) return;
+
+            const codigo = e.target.dataset.codigo;
+
+            // Si NO tienes login, usa uno temporal
+            const idCliente = localStorage.getItem("idCliente") ?? 1;
+            const diaEntrada = localStorage.getItem("diaEntrada");
+            const diaSalida = localStorage.getItem("diaSalida");
+            const tipoRegimen = localStorage.getItem("tipoRegimen");
+            const pax = localStorage.getItem("pax");
+
+            const body = {
+                dia_entrada: diaEntrada,
+                dia_salida: diaSalida,
+                totalPersonas: pax,
+                tipoRegimen: tipoRegimen,
+                codigo: codigo,
+                idCliente: idCliente
+            };
+
+            console.log("📩 Enviando reserva:", body);
+
+            try {
+                const response = await fetch("http://localhost:3000/api/reservas/create", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+                console.log("Respuesta del servidor:", result);
+
+                if (response.ok) {
+                    const reservaId = result.reservaId;
+                    localStorage.setItem("ultimaReservaId", reservaId);
+
+                    const serviciosExtra = JSON.parse(localStorage.getItem("serviciosExtra")) || [];
+
+                    for (const servicioId of serviciosExtra) {
+                        await fetch("http://localhost:3000/api/servicio_reserva/create", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                idReserva: reservaId,
+                                idServiciosExtra: servicioId,
+                                cantidad: 1
+                            })
+                        });
+                    }
+
+                    alert("Reserva creada con servicios extra 🎉");
+                }
+                else {
+                    alert("Error: " + result.message);
+                }
+
+            } catch (error) {
+                console.error("Error en la solicitud:", error);
+                alert("Error al conectar con el servidor.");
+            }
+        });
+    </script>
+
+</body>
+
+</html>
