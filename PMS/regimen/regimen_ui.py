@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from api.webservice import get, post, put, delete
+from api.webservice import get, post, put, delete, patch
 
 
 class Regimen(tk.Frame):
@@ -24,11 +24,6 @@ class Regimen(tk.Frame):
         frame_form = tk.LabelFrame(self, text="Gestión de Regímenes")
         frame_form.pack(fill="x", padx=10, pady=10)
 
-        tk.Label(frame_form, text="Tipo de régimen").grid(row=0, column=0, padx=5, pady=5)
-
-        self.entry_regimen = tk.Entry(frame_form)
-        self.entry_regimen.grid(row=0, column=1, padx=5, pady=5)
-
         btn_crear = tk.Button(frame_form, text="Crear", command=self.crear_regimen)
         btn_crear.grid(row=0, column=2, padx=5)
 
@@ -46,15 +41,15 @@ class Regimen(tk.Frame):
         # TABLA
         # -----------------------------
 
-        columnas = ("tipoRegimen",)
+        columnas = ("tipoRegimen", "precio")
 
         self.tabla = ttk.Treeview(self, columns=columnas, show="headings")
 
         self.tabla.heading("tipoRegimen", text="Tipo de Régimen")
+        self.tabla.heading("precio", text="Precio")
+
 
         self.tabla.pack(fill="both", expand=True, padx=10, pady=10)
-
-        self.tabla.bind("<<TreeviewSelect>>", self.seleccionar_regimen)
 
     # -----------------------------
     # CARGAR DATOS
@@ -73,67 +68,140 @@ class Regimen(tk.Frame):
 
         # recorrer lista de regimenes
         for r in datos["resultRegimen"]:
-            self.tabla.insert("", tk.END, values=(r["tipoRegimen"], r["precio"]))
+            self.tabla.insert("", tk.END, values=(r["descripcion"],r["precio"],r["tipoRegimen"]))
 
     # -----------------------------
     # CREAR
     # -----------------------------
 
     def crear_regimen(self):
+        #--------------------------
+        #FORMULARIO ACTUALIZAR
+        #--------------------------
+        formulario = tk.Toplevel(self)
+        formulario.title("Crear Regimen")
+        formulario.geometry("300x180")
+        formulario.resizable(False,False)
 
-        tipo = self.entry_regimen.get()
+        #Campo tipoRegimen
+        tk.Label(formulario, text="Tipo Regimen").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        entry_tipoRegimen = tk.Entry(formulario)
+        entry_tipoRegimen.grid(row=0, column=1, padx=10, pady=10)
 
-        if not tipo:
-            messagebox.showwarning("Aviso", "Introduce un régimen")
-            return
+        #Campo descripcion
+        tk.Label(formulario, text="Descripcion:").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        entry_descripcion = tk.Entry(formulario)
+        entry_descripcion.grid(row=1, column=1, padx=10, pady=10)
 
-        datos = {"tipoRegimen": tipo}
+        #Campo precio
+        tk.Label(formulario, text="Precio:").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        entry_precio = tk.Entry(formulario)
+        entry_precio.grid(row=2, column=1, padx=10, pady=10)
 
-        resultado = post(self.endpoint, datos)
+        def crear():
+            nuevo_tipoRegimen = entry_tipoRegimen.get().strip()
+            nueva_descripcion = entry_descripcion.get().strip()
+            try:
+                nuevo_precio = float(entry_precio.get().strip())
+            except ValueError:
+                messagebox.showerror("Error", "El precio debe ser un número.")
+                return
 
-        if resultado:
-            messagebox.showinfo("OK", "Régimen creado")
-            self.cargar_regimenes()
-            self.entry_regimen.delete(0, tk.END)
+            datos = {
+            "tipoRegimen": nuevo_tipoRegimen,
+            "descripcion": nueva_descripcion,
+            "precio": nuevo_precio
+            }
 
-    # -----------------------------
-    # SELECCIONAR
-    # -----------------------------
+            endpoint = self.endpoint+"/create/"
+            resultado = post(endpoint, datos)
+            if resultado:
+                messagebox.showinfo("OK", "Régimen creado")
+                formulario.destroy()
+                self.cargar_regimenes()
 
-    def seleccionar_regimen(self, event):
+        # -----------------------------
+        # Botones del formulario
+        # -----------------------------
+        btn_guardar = tk.Button(formulario, text="Crear", command=crear)
+        btn_guardar.grid(row=3, column=0, padx=10, pady=15)
 
-        seleccionado = self.tabla.focus()
+        btn_cancelar = tk.Button(formulario, text="Cancelar", command=formulario.destroy)
+        btn_cancelar.grid(row=3, column=1, padx=10, pady=15)
 
-        if not seleccionado:
-            return
-
-        valores = self.tabla.item(seleccionado)["values"]
-
-        self.entry_regimen.delete(0, tk.END)
-        self.entry_regimen.insert(0, valores[0])
+        # hacer modal
+        formulario.transient(self)
+        formulario.grab_set()
+        formulario.focus()
 
     # -----------------------------
     # ACTUALIZAR
     # -----------------------------
 
     def actualizar_regimen(self):
-
         seleccionado = self.tabla.focus()
 
         if not seleccionado:
             messagebox.showwarning("Aviso", "Selecciona un régimen")
             return
 
-        regimen_original = self.tabla.item(seleccionado)["values"][0]
-        nuevo_regimen = self.entry_regimen.get()
+        tipoRegimen_actualizar = self.tabla.item(seleccionado)["values"][2]
+        descripcion_original = self.tabla.item(seleccionado)["values"][0]
+        precio_original = self.tabla.item(seleccionado)["values"][1]
 
-        datos = {"tipoRegimen": nuevo_regimen}
+        #--------------------------
+        #FORMULARIO ACTUALIZAR
+        #--------------------------
+        formulario = tk.Toplevel(self)
+        formulario.title("Actualizar Regimen")
+        formulario.geometry("300x180")
+        formulario.resizable(False,False)
 
-        resultado = put(f"{self.endpoint}/{regimen_original}", datos)
+        #Campo descripcion
+        tk.Label(formulario, text="Descripcion:").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        entry_descripcion = tk.Entry(formulario)
+        entry_descripcion.grid(row=0, column=1, padx=10, pady=10)
+        entry_descripcion.insert(0, descripcion_original)
 
-        if resultado:
-            messagebox.showinfo("OK", "Régimen actualizado")
-            self.cargar_regimenes()
+        #Campo precio
+        tk.Label(formulario, text="Precio:").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        entry_precio = tk.Entry(formulario)
+        entry_precio.grid(row=1, column=1, padx=10, pady=10)
+        entry_precio.insert(0, str(precio_original))
+
+        def actualizar():
+            nueva_descripcion = entry_descripcion.get().strip()
+            try:
+                nuevo_precio = float(entry_precio.get().strip())
+            except ValueError:
+                messagebox.showerror("Error", "El precio debe ser un número.")
+                return
+
+            datos = {
+            "descripcion": nueva_descripcion,
+            "precio": nuevo_precio
+            }
+
+            endpoint = self.endpoint+"/update/"+tipoRegimen_actualizar
+            resultado = patch(endpoint, datos)
+            if resultado:
+                messagebox.showinfo("OK", "Régimen actualizado")
+                formulario.destroy()
+                self.cargar_regimenes()
+
+        # -----------------------------
+        # Botones del formulario
+        # -----------------------------
+        btn_guardar = tk.Button(formulario, text="Actualizar", command=actualizar)
+        btn_guardar.grid(row=3, column=0, padx=10, pady=15)
+
+        btn_cancelar = tk.Button(formulario, text="Cancelar", command=formulario.destroy)
+        btn_cancelar.grid(row=3, column=1, padx=10, pady=15)
+
+        # hacer modal
+        formulario.transient(self)
+        formulario.grab_set()
+        formulario.focus()
 
     # -----------------------------
     # BORRAR
@@ -147,7 +215,7 @@ class Regimen(tk.Frame):
             messagebox.showwarning("Aviso", "Selecciona un régimen")
             return
 
-        regimen_borrar = self.tabla.item(seleccionado)["values"][0]
+        regimen_borrar = self.tabla.item(seleccionado)["values"][2]
 
         endpoint = self.endpoint+"/"+regimen_borrar
 
