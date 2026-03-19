@@ -2,6 +2,7 @@ const db = require("../../db");
 
 // Mapeo de códigos válidos → número de camas por defecto
 const tiposHabitacion = {
+    "IND": {camas: 1},
     "DV": { camas: 2},
     "DB": { camas: 2},
     "DVS": { camas: 2},

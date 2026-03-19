@@ -7,7 +7,7 @@ router.get("/",getAllRegimenes);
 router.get("/precio",getPrecioRegimen);
 router.post("/create", createRegimen);
 router.patch("/update/:tipoRegimen", updateRegimen);
-router.delete("/:tipoRegimen", deleteRegimen);
+router.delete("/delete/:tipoRegimen", deleteRegimen);
 
 
 

@@ -1,5 +1,13 @@
 const db = require("../../db");
 
+function getAllClientes(req,res){
+    db.query("Select * from Cliente", (err, resultClientes) =>{
+        if (err) return res.status(500).json({ error: true, message: "Error en el servidor" });
+        return res.status(200).json({ error: false, resultClientes });
+    })
+
+}
+
 function createCliente(req, res) {
     const { nombre, apellido, dni } = req.body;
 
@@ -12,18 +20,66 @@ function createCliente(req, res) {
 
 }
 
-function getCliente(req, res) {
+function inicioSesionCliente(){
     const {nombre, apellido, dni } = req.query;
     //Validar que los parametros del url si estan todos y si son validos
     if (!nombre || !apellido || !dni) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
-
 
     //Se realiza la consulta para obtener toda la informacion de un cliente
     db.query("Select idCliente from cliente where nombre = ? and apellido= ? and dni=?", [nombre,apellido,dni], (err, cliente) => {
         if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
         return res.status(200).json({ error: false, cliente });
     });
+}
 
+function getCliente(req, res) {
+
+    const { campo, valor } = req.query;
+
+    // Validar parámetros
+    if (!campo || !valor) {
+        return res.status(400).json({
+            error: true,
+            message: "Faltan campos obligatorios"
+        });
+    }
+
+    // Campos permitidos
+    const camposValidos = ["idCliente", "nombre", "apellido", "dni"];
+
+    if (!camposValidos.includes(campo)) {
+        return res.status(400).json({
+            error: true,
+            message: "Campo no válido"
+        });
+    }
+
+    // Validar idCliente numérico
+    if (campo === "idCliente" && isNaN(valor)) {
+        return res.status(400).json({
+            error: true,
+            message: "El idCliente debe ser numérico"
+        });
+    }
+
+    // Construir query dinámica
+    const sql = `SELECT * FROM cliente WHERE ${campo} = ?`;
+
+    db.query(sql, [valor], (err, cliente) => {
+
+        if (err) {
+            return res.status(500).json({
+                error: true,
+                message: "Error en el servidor"
+            });
+        }
+
+        return res.status(200).json({
+            error: false,
+            resultCliente: cliente
+        });
+
+    });
 }
 
 function updateCliente(req, res) {
@@ -123,4 +179,4 @@ function getReservasCliente(req, res) {
 
 }
 
-module.exports = { createCliente, getCliente, updateCliente, deleteCliente, getReservasCliente };  
+module.exports = { getAllClientes, createCliente, inicioSesionCliente,getCliente, updateCliente, deleteCliente, getReservasCliente };  

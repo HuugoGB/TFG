@@ -3,6 +3,7 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 
+const agenciaRoutes = require("./src/routes/agencia.routes.js")
 const reservasRoutes = require("./src/routes/reservas.routes.js");
 const clientesRoutes = require("./src/routes/clientes.routes.js");
 const habitacionesRoutes = require("./src/routes/habitaciones.router.js");
@@ -24,6 +25,7 @@ app.use(cors({
 }));
 
 // rutas
+app.use("/api/agencia",agenciaRoutes);
 app.use("/api/reservas", reservasRoutes);
 app.use("/api/clientes", clientesRoutes);
 app.use("/api/habitaciones",habitacionesRoutes);

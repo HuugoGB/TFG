@@ -1,12 +1,14 @@
 const express = require("express");
-const { createCliente, getCliente, deleteCliente, getReservasCliente, updateCliente } = require("../controllers/clientes.controller");
+const { getAllClientes, createCliente, inicioSesionCliente,getCliente, deleteCliente, getReservasCliente, updateCliente } = require("../controllers/clientes.controller");
 
 const router = express.Router();
 
+router.get("/",getAllClientes);
+router.get("/inicioSesion/",inicioSesionCliente);
 router.post("/create", createCliente);
-router.get("/read", getCliente);
+router.get("/buscar", getCliente);
 router.delete("/delete/:idCliente", deleteCliente);
-router.get("/reservas_cliente/:idCliente", getReservasCliente);
+router.get("/reservasCliente/:idCliente", getReservasCliente);
 router.put("/update/:idCliente", updateCliente);
 
 module.exports = router;
