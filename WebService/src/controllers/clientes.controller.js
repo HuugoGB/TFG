@@ -9,24 +9,59 @@ function getAllClientes(req,res){
 }
 
 function createCliente(req, res) {
-    const { nombre, apellido, dni } = req.body;
+    const { nombre, apellido, dni, email, contrasena } = req.body;
 
-    if (!nombre || !apellido || !dni) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
+    if (!nombre || !apellido || !dni || !email || !contrasena) {
+        return res.status(400).json({
+            error: true,
+            message: "Faltan campos obligatorios"
+        });
+    }
 
-    db.query("Insert into cliente (nombre, apellido, dni) values (?,?,?)", [nombre, apellido, dni], (err, result) => {
-        if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
-        return res.status(201).json({ error: false, clienteId: result.insertId });
+    //Comprobar si el email ya existe
+    db.query("SELECT * FROM cliente WHERE email = ?", [email], (err, results) => {
+        if (err) {
+            return res.status(500).json({
+                error: true,
+                message: "Error al comprobar el email"
+            });
+        }
+
+        if (results.length > 0) {
+            return res.status(400).json({
+                error: true,
+                message: "El email ya está registrado"
+            });
+        }
+
+        //Insertar cliente si no existe
+        db.query(
+            "INSERT INTO cliente (nombre, apellido, dni, email, contrasena) VALUES (?,?,?,?,?)",
+            [nombre, apellido, dni, email, contrasena],
+            (err, result) => {
+                if (err) {
+                    return res.status(500).json({
+                        error: true,
+                        message: "Error con el servidor"
+                    });
+                }
+
+                return res.status(201).json({
+                    error: false,
+                    clienteId: result.insertId
+                });
+            }
+        );
     });
-
 }
 
-function inicioSesionCliente(){
-    const {nombre, apellido, dni } = req.query;
+function inicioSesionCliente(req,res){
+    const {email, contrasena } = req.query;
     //Validar que los parametros del url si estan todos y si son validos
-    if (!nombre || !apellido || !dni) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
+    if (!email || !contrasena) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
 
-    //Se realiza la consulta para obtener toda la informacion de un cliente
-    db.query("Select idCliente from cliente where nombre = ? and apellido= ? and dni=?", [nombre,apellido,dni], (err, cliente) => {
+    //Se realiza la consulta para obtener el id del cliente
+    db.query("Select idCliente from cliente where email = ? and contrasena= ?", [email,contrasena], (err, cliente) => {
         if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
         return res.status(200).json({ error: false, cliente });
     });
