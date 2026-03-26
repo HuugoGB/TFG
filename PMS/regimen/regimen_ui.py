@@ -76,7 +76,7 @@ class Regimen(tk.Frame):
 
     def crear_regimen(self):
         #--------------------------
-        #FORMULARIO ACTUALIZAR
+        #FORMULARIO CREAR
         #--------------------------
         formulario = tk.Toplevel(self)
         formulario.title("Crear Regimen")
@@ -113,7 +113,7 @@ class Regimen(tk.Frame):
             "precio": nuevo_precio
             }
 
-            endpoint = self.endpoint+"/create/"
+            endpoint = f"{self.endpoint}/create/"
             resultado = post(endpoint, datos)
             if resultado:
                 messagebox.showinfo("OK", "Régimen creado")
@@ -182,7 +182,7 @@ class Regimen(tk.Frame):
             "precio": nuevo_precio
             }
 
-            endpoint = self.endpoint+"/update/"+tipoRegimen_actualizar
+            endpoint = f"{self.endpoint}/update/{tipoRegimen_actualizar}"
             resultado = patch(endpoint, datos)
             if resultado:
                 messagebox.showinfo("OK", "Régimen actualizado")
@@ -217,7 +217,7 @@ class Regimen(tk.Frame):
 
         regimen_borrar = self.tabla.item(seleccionado)["values"][2]
 
-        endpoint = self.endpoint+"/"+regimen_borrar
+        endpoint = f"{self.endpoint}/delete/{regimen_borrar}"
 
         resultado = delete(endpoint)
 

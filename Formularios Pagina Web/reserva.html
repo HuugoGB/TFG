@@ -2,378 +2,365 @@
 <html lang="es">
 
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reserva Hotel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva Hotel</title>
 
-<style>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f5f5, #e9e9e9);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+        #contenedorReserva {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
 
-/* ===== BASE ===== */
+        .reserva-form {
+            display: flex;
+            align-items: end;
+            gap: 20px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            flex-wrap: wrap;
+            transition: 0.3s;
+        }
 
-body{
-background:linear-gradient(135deg,#f5f5f5,#e9e9e9);
-font-family:"Segoe UI",Arial,sans-serif;
-}
+        .reserva-form:hover {
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
+        }
 
-/* CONTENEDOR */
+        .campo {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 160px;
+        }
 
-#contenedorReserva{
-max-width:1200px;
-margin:80px auto;
-padding:0 20px;
-}
+        .campo label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #444;
+        }
 
-/* BARRA BUSCADOR */
+        .campo input,
+        .campo select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fafafa;
+            transition: 0.25s;
+        }
 
-.reserva-form{
-display:flex;
-align-items:end;
-gap:20px;
-background:white;
-padding:30px;
-border-radius:16px;
-box-shadow:0 20px 50px rgba(0,0,0,0.15);
-flex-wrap:wrap;
-transition:0.3s;
-}
+        .campo input:focus,
+        .campo select:focus {
+            outline: none;
+            background: white;
+            border-color: #111;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
 
-.reserva-form:hover{
-box-shadow:0 25px 60px rgba(0,0,0,0.18);
-}
+        .buscarBtn {
+            background: linear-gradient(135deg, #111, #333);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            height: 44px;
+            transition: 0.2s;
+        }
 
-/* CAMPOS */
+        .buscarBtn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+        }
 
-.campo{
-display:flex;
-flex-direction:column;
-flex:1;
-min-width:160px;
-}
+        .personas-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.campo label{
-font-size:13px;
-font-weight:600;
-margin-bottom:6px;
-color:#444;
-}
+        .personas-selector button {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 8px;
+            background: #eee;
+            font-size: 22px;
+            font-weight: bold;
+            color: #111; /* 🔥 CLAVE */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.campo input,
-.campo select{
-padding:12px;
-border:1px solid #ddd;
-border-radius:10px;
-font-size:14px;
-background:#fafafa;
-transition:0.25s;
-}
+        .personas-selector span {
+            min-width: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
 
-.campo input:focus,
-.campo select:focus{
-outline:none;
-background:white;
-border-color:#111;
-box-shadow:0 0 0 3px rgba(0,0,0,0.05);
-}
+        .servicios-wrapper {
+            width: 100%;
+            margin-top: 15px;
+        }
 
-/* BOTON BUSCAR */
+        .servicios-titulo {
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
 
-.buscarBtn{
-background:linear-gradient(135deg,#111,#333);
-color:white;
-border:none;
-padding:14px 30px;
-border-radius:12px;
-font-weight:600;
-cursor:pointer;
-height:44px;
-transition:0.2s;
-}
+        .servicio-extra {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 14px;
+        }
 
-.buscarBtn:hover{
-transform:translateY(-1px);
-box-shadow:0 10px 20px rgba(0,0,0,0.25);
-}
+        .login-warning {
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
 
-/* ===== SELECTOR PERSONAS ===== */
-
-.personas-selector{
-display:flex;
-align-items:center;
-gap:10px;
-}
-
-.personas-selector button{
-width:30px;
-height:30px;
-border:none;
-border-radius:6px;
-background:#eee;
-font-size:18px;
-cursor:pointer;
-}
-
-.personas-selector span{
-min-width:20px;
-text-align:center;
-font-weight:600;
-}
-
-/* ===== SERVICIOS EXTRA ===== */
-
-.servicios-wrapper{
-width:100%;
-margin-top:15px;
-}
-
-.servicios-titulo{
-font-weight:700;
-margin-bottom:8px;
-}
-
-.servicio-extra{
-display:inline-flex;
-align-items:center;
-margin-right:15px;
-font-size:14px;
-}
-
-/* ===== MENSAJE LOGIN ===== */
-
-.login-warning{
-max-width:600px;
-margin:80px auto;
-padding:35px;
-background:white;
-border-radius:18px;
-box-shadow:0 15px 40px rgba(0,0,0,0.1);
-text-align:center;
-}
-
-.login-warning a{
-display:inline-block;
-margin-top:20px;
-padding:12px 25px;
-background:#111;
-color:white;
-border-radius:10px;
-text-decoration:none;
-}
-
-</style>
+        .login-warning a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: #111;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+        }
+    </style>
 
 </head>
 
 <body>
 
-<div id="contenedorReserva">
+    <div id="contenedorReserva">
 
-<form id="formDisponibilidad" class="reserva-form">
+        <form id="formDisponibilidad" class="reserva-form">
 
-<div class="campo">
-<label>Entrada</label>
-<input type="date" id="entrada" name="entrada" required>
-</div>
+            <div class="campo">
+                <label>Entrada</label>
+                <input type="date" id="entrada" name="entrada" required>
+            </div>
 
-<div class="campo">
-<label>Salida</label>
-<input type="date" id="salida" name="salida" required>
-</div>
+            <div class="campo">
+                <label>Salida</label>
+                <input type="date" id="salida" name="salida" required>
+            </div>
 
-<div class="campo">
-<label>Personas</label>
+            <div class="campo">
+                <label>Personas</label>
 
-<div class="personas-selector">
+                <div class="personas-selector">
 
-<button type="button" id="menos">-</button>
+                    <button type="button" id="menos">-</button>
 
-<span id="numPersonas">2</span>
+                    <span id="numPersonas">2</span>
 
-<button type="button" id="mas">+</button>
+                    <button type="button" id="mas">+</button>
 
-</div>
+                </div>
 
-<input type="hidden" id="personas" name="personas" value="2">
+                <input type="hidden" id="personas" name="personas" value="2">
 
-</div>
+            </div>
 
-<div class="campo">
-<label>Régimen</label>
-<select id="regimenSelect" name="regimen">
-<option value="">Seleccione régimen</option>
-</select>
-</div>
+            <div class="campo">
+                <label>Régimen</label>
+                <select id="regimenSelect" name="regimen">
+                    <option value="">Seleccione régimen</option>
+                </select>
+            </div>
 
-<button type="submit" class="buscarBtn">Buscar</button>
+            <button type="submit" class="buscarBtn">Buscar</button>
 
-<div class="servicios-wrapper" id="serviciosContainer"></div>
+            <div class="servicios-wrapper" id="serviciosContainer"></div>
 
-</form>
+        </form>
 
-</div>
+    </div>
 
-<div id="resultado"></div>
+    <div id="resultado"></div>
 
-<script>
+    <script>
 
-/* ===== CONTROL LOGIN ===== */
+        /* CONTROL LOGIN */
 
-document.addEventListener("DOMContentLoaded",function(){
+        document.addEventListener("DOMContentLoaded", function () {
 
-const idCliente=localStorage.getItem("idCliente");
-const contenedor=document.getElementById("contenedorReserva");
-const resultado=document.getElementById("resultado");
+            const idCliente = localStorage.getItem("idCliente");
+            const contenedor = document.getElementById("contenedorReserva");
+            const resultado = document.getElementById("resultado");
 
-if(!idCliente){
+            if (!idCliente) {
 
-contenedor.style.display="none";
+                contenedor.style.display = "none";
 
-resultado.innerHTML=`
-<div class="login-warning">
-<h3>Inicia sesión para consultar disponibilidad</h3>
-<p>Debes iniciar sesión para poder realizar una reserva.</p>
-<a href="/wordpress/login">Iniciar sesión</a>
-</div>
+                resultado.innerHTML = `
+                <div class="login-warning">
+                    <h3>Inicia sesión para consultar disponibilidad</h3>
+                    <p>Debes iniciar sesión para poder realizar una reserva.</p>
+                    <a href="/wordpress/login">Iniciar sesión</a>
+                </div>
 `;
 
-}
+            }
 
-});
-
-
-/* ===== SELECTOR PERSONAS ===== */
-
-let personas=2;
-
-const numPersonas=document.getElementById("numPersonas");
-const inputPersonas=document.getElementById("personas");
-
-document.getElementById("mas").onclick=function(){
-
-if(personas<6){
-personas++;
-numPersonas.textContent=personas;
-inputPersonas.value=personas;
-}
-
-};
-
-document.getElementById("menos").onclick=function(){
-
-if(personas>1){
-personas--;
-numPersonas.textContent=personas;
-inputPersonas.value=personas;
-}
-
-};
+        });
 
 
-/* ===== CARGAR REGIMEN ===== */
+        /* SELECTOR PERSONAS */
 
-window.addEventListener("load",async function(){
+        let personas = 2;
 
-try{
+        const numPersonas = document.getElementById("numPersonas");
+        const inputPersonas = document.getElementById("personas");
 
-const res=await fetch("http://localhost:3000/api/regimen/");
-const data=await res.json();
+        document.getElementById("mas").onclick = function () {
 
-const select=document.getElementById("regimenSelect");
+            if (personas < 5) {
+                personas++;
+                numPersonas.textContent = personas;
+                inputPersonas.value = personas;
+            }
 
-data.resultRegimen.forEach(reg=>{
+        };
 
-const option=document.createElement("option");
-option.value=reg.tipoRegimen;
-option.textContent=reg.tipoRegimen;
+        document.getElementById("menos").onclick = function () {
 
-select.appendChild(option);
+            if (personas > 1) {
+                personas--;
+                numPersonas.textContent = personas;
+                inputPersonas.value = personas;
+            }
 
-});
-
-}catch(e){
-
-console.error(e);
-
-}
-
-
-/* ===== SERVICIOS EXTRA ===== */
-
-try{
-
-const res=await fetch("http://localhost:3000/api/servicio_extra/");
-const data=await res.json();
-
-const container=document.getElementById("serviciosContainer");
-
-const titulo=document.createElement("p");
-titulo.textContent="Servicios extra:";
-titulo.classList.add("servicios-titulo");
-
-container.appendChild(titulo);
-
-data.resultServicioExtra.forEach(serv=>{
-
-const wrapper=document.createElement("div");
-wrapper.classList.add("servicio-extra");
-
-const check=document.createElement("input");
-check.type="checkbox";
-check.value=serv.idServiciosExtras;
-check.name="serviciosExtra[]";
-
-const label=document.createElement("label");
-label.textContent=serv.nombreServicio;
-
-wrapper.appendChild(check);
-wrapper.appendChild(label);
-
-container.appendChild(wrapper);
-
-});
-
-}catch(e){
-
-console.error(e);
-
-}
-
-});
+        };
 
 
-/* ===== CONSULTAR DISPONIBILIDAD ===== */
+        /*CARGAR REGIMEN */
 
-document.getElementById("formDisponibilidad").addEventListener("submit",async function(e){
+        window.addEventListener("load", async function () {
 
-e.preventDefault();
+            try {
 
-const serviciosExtra=Array.from(
-document.querySelectorAll('input[name="serviciosExtra[]"]:checked')
-).map(cb=>cb.value);
+                const res = await fetch("http://localhost:3000/api/regimen/");
+                const data = await res.json();
 
-localStorage.setItem("serviciosExtra",JSON.stringify(serviciosExtra));
+                const select = document.getElementById("regimenSelect");
 
-const entrada=this.entrada.value;
-const salida=this.salida.value;
-const pax=this.personas.value;
-const tipoRegimen=document.getElementById("regimenSelect").value;
+                data.resultRegimen.forEach(reg => {
 
-localStorage.setItem("diaEntrada",entrada);
-localStorage.setItem("diaSalida",salida);
-localStorage.setItem("pax",pax);
-localStorage.setItem("tipoRegimen",tipoRegimen);
+                    const option = document.createElement("option");
+                    option.value = reg.tipoRegimen;
+                    option.textContent = reg.tipoRegimen;
 
-const url=`http://localhost:3000/api/tipo_habitacion/disponibilidad?pax=${pax}&dia_entrada=${entrada}&dia_salida=${salida}`;
+                    select.appendChild(option);
 
-const res=await fetch(url);
-const data=await res.json();
+                });
 
-localStorage.setItem("disponibilidad",JSON.stringify(data.result));
+            } catch (e) {
 
-window.location.href="http://localhost/wordpress/?page_id=10";
+                console.error(e);
 
-});
+            }
 
-</script>
+
+            /*SERVICIOS EXTRA  */
+
+            try {
+
+                const res = await fetch("http://localhost:3000/api/servicio_extra/");
+                const data = await res.json();
+
+                const container = document.getElementById("serviciosContainer");
+
+                const titulo = document.createElement("p");
+                titulo.textContent = "Servicios extra:";
+                titulo.classList.add("servicios-titulo");
+
+                container.appendChild(titulo);
+
+                data.resultServicioExtra.forEach(serv => {
+
+                    const wrapper = document.createElement("div");
+                    wrapper.classList.add("servicio-extra");
+
+                    const check = document.createElement("input");
+                    check.type = "checkbox";
+                    check.value = serv.idServiciosExtras;
+                    check.name = "serviciosExtra[]";
+
+                    const label = document.createElement("label");
+                    label.textContent = serv.nombreServicio;
+
+                    wrapper.appendChild(check);
+                    wrapper.appendChild(label);
+
+                    container.appendChild(wrapper);
+
+                });
+
+            } catch (e) {
+
+                console.error(e);
+
+            }
+
+        });
+
+
+        /*CONSULTAR DISPONIBILIDAD */
+
+        document.getElementById("formDisponibilidad").addEventListener("submit", async function (e) {
+
+            e.preventDefault();
+
+            const serviciosExtra = Array.from(
+                document.querySelectorAll('input[name="serviciosExtra[]"]:checked')
+            ).map(cb => cb.value);
+
+            localStorage.setItem("serviciosExtra", JSON.stringify(serviciosExtra));
+
+            const entrada = this.entrada.value;
+            const salida = this.salida.value;
+            const pax = this.personas.value;
+            const tipoRegimen = document.getElementById("regimenSelect").value;
+
+            localStorage.setItem("diaEntrada", entrada);
+            localStorage.setItem("diaSalida", salida);
+            localStorage.setItem("pax", pax);
+            localStorage.setItem("tipoRegimen", tipoRegimen);
+
+            const url = `http://localhost:3000/api/tipo_habitacion/disponibilidad?pax=${pax}&dia_entrada=${entrada}&dia_salida=${salida}`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            localStorage.setItem("disponibilidad", JSON.stringify(data.result));
+
+            window.location.href = "http://localhost/wordpress/?page_id=10";
+
+        });
+
+    </script>
 
 </body>
+
 </html>

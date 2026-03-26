@@ -1,0 +1,83 @@
+<style>
+.inicioSesion-form{
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 25px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+}
+.inicioSesion-form h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 24px;
+    color: #333;
+}
+.inicioSesion-form input,
+.inicioSesion-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+.inicioSesion-form button {
+    width: 100%;
+    padding: 12px;
+    background: #080707;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.inicioSesion-form button:hover {
+    background: #403939;
+}
+</style>
+
+<form id="inicioSesion" class="inicioSesion-form">
+   <input id="email" name="email" type="email" placeholder="Correo Electronico" required>
+   <input id="contrasena" name="contrasena" type="password" placeholder="Contraseña" required>
+   <button type="submit">Iniciar Sesion</button>
+    <p>
+¿No tienes un cuenta aun?<a href="http://localhost/wordpress/?page_id=85">Registrate Aqui</a>
+    </p>
+</form>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("inicioSesion");
+    if (!form) return;
+
+    form.addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const email = form.email.value.trim();
+        const contraseña = form.contrasena.value.trim();
+
+        const url = `http://localhost:3000/api/clientes/inicioSesion?email=${encodeURIComponent(email)}&contrasena=${encodeURIComponent(contraseña)}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.error || !data.cliente || data.cliente.length === 0) {
+                alert("Cliente no encontrado");
+                return;
+            }
+
+            const idCliente = data.cliente[0].idCliente;
+            localStorage.setItem("idCliente", idCliente.toString());
+
+            alert("Login correcto");
+            window.location.href = "http://localhost/wordpress/?page_id=10";
+        } catch(err) {
+            console.error("Error al conectar:", err);
+            alert("Error al conectar con el servidor");
+        }
+    });
+});
+</script>

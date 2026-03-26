@@ -10,7 +10,7 @@ class App(tk.Tk):
         super().__init__()
 
         self.title("PMS")
-        self.geometry("1600x900")
+        self.state("zoomed")
 
         self.container = tk.Frame(self)
         self.container.pack(fill="both", expand=True)
