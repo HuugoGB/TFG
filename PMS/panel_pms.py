@@ -2,6 +2,7 @@ import tkinter as tk
 from regimen.regimen_ui import Regimen
 from cliente.cliente_ui import Clientes
 from habitacion.habitacion_ui import Habitacion
+from reserva.reserva_ui import Reserva
 
 class PanelPMS(tk.Frame):
 
@@ -68,8 +69,8 @@ class PanelPMS(tk.Frame):
 
     def mostrar_reservas(self):
         self.limpiar_contenido()
-        label = tk.Label(self.frame_contenido, text="Gestión de Reservas", font=("Arial",20))
-        label.pack(pady=20)
+        frame = Reserva(self.frame_contenido)
+        frame.pack(fill="both", expand=True)
 
     def mostrar_regimenes(self):
         self.limpiar_contenido()

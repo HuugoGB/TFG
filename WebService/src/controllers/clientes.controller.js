@@ -9,9 +9,9 @@ function getAllClientes(req,res){
 }
 
 function createCliente(req, res) {
-    const { nombre, apellido, dni, email, contrasena } = req.body;
+    const { nombre, apellido, dni, cif, email, contrasena } = req.body;
 
-    if (!nombre || !apellido || !dni || !email || !contrasena) {
+    if (!nombre || !apellido || !dni || !cif ||!email || !contrasena) {
         return res.status(400).json({
             error: true,
             message: "Faltan campos obligatorios"
@@ -36,8 +36,8 @@ function createCliente(req, res) {
 
         //Insertar cliente si no existe
         db.query(
-            "INSERT INTO cliente (nombre, apellido, dni, email, contrasena) VALUES (?,?,?,?,?)",
-            [nombre, apellido, dni, email, contrasena],
+            "INSERT INTO cliente (nombre, apellido, dni,cif, email, contrasena) VALUES (?,?,?,?,?)",
+            [nombre, apellido, dni,cif, email, contrasena],
             (err, result) => {
                 if (err) {
                     return res.status(500).json({

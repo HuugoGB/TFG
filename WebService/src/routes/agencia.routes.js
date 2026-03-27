@@ -1,7 +1,8 @@
 const express = require("express");
-const { getAllAgencias } = require("../controllers/agencia.controller");
+const { getAllAgencias, getNombreAgencia } = require("../controllers/agencia.controller");
 
 const router = express.Router();
 router.get("/",getAllAgencias);
+router.get("/:cif")
 
 module.exports = router;
