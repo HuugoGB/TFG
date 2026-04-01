@@ -7,6 +7,18 @@ function getAllTipoHab(req, res) {
     })
 }
 
+function getTipoHabPorPax(req, res){
+    const {pax} = req.params;
+
+    if (!pax) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
+
+
+    db.query("Select * from tipo_hab where pax = ?",[pax], (err, resultTipoHab) => {
+        if (err) return res.status(500).json({ error: true, message: "Error en el servidor" });
+        return res.status(200).json({ error: false, resultTipoHab });
+    })
+}
+
 function createTipoHab(req, res) {
     const { codigo, denominacion, precio, pax } = req.body;
     //Validar que estan todos los elementos de la tabla de tipo de habitacion
@@ -82,4 +94,4 @@ HAVING habitaciones_disponibles > 0;
 
 
 
-module.exports = { getAllTipoHab, createTipoHab, disponibilidadTipoHab }
+module.exports = { getAllTipoHab, getTipoHabPorPax, createTipoHab, disponibilidadTipoHab }

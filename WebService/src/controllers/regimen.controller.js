@@ -45,7 +45,7 @@ function updateRegimen(req, res) {
     let { precio, descripcion } = req.body;
 
     // Validamos que precio y tipoRegimen existen
-    if (!precio || !tipoRegimen) 
+    if (!precio || !tipoRegimen || !descripcion) 
         return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
 
     // Buscamos el régimen actual

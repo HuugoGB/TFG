@@ -80,7 +80,7 @@ function getCliente(req, res) {
     }
 
     // Campos permitidos
-    const camposValidos = ["idCliente", "nombre", "apellido", "dni"];
+    const camposValidos = ["idCliente", "nombre", "apellido", "dni","cif","email","contrasena"];
 
     if (!camposValidos.includes(campo)) {
         return res.status(400).json({
@@ -119,7 +119,7 @@ function getCliente(req, res) {
 
 function updateCliente(req, res) {
     const { idCliente } = req.params;
-    var { nombre, apellido, dni, cif } = req.body;
+    var { nombre, apellido, dni, cif, email, contrasena } = req.body;
     //Validar que los parametros del url si estan todos y si son validos
     if (!idCliente) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
 
@@ -136,6 +136,8 @@ function updateCliente(req, res) {
         const nuevoApellido = apellido || cliente.apellido;
         const nuevoDni = dni || cliente.dni;
         const nuevoCif = cif || cliente.cif;
+        const nuevoEmail = email || cliente.email;
+        const nuevoContrasena = contrasena || cliente.contrasena;
 
         //Comprobamos que el cif de la agencia si no este vacio, sea uno valido
         if (isNaN(cif)) {
@@ -152,8 +154,8 @@ function updateCliente(req, res) {
 
         function actualizarCliente() {
             db.query(
-                "UPDATE cliente SET nombre=?, apellido=?, dni=?, cif=? WHERE idCliente=?",
-                [nuevoNombre, nuevoApellido, nuevoDni, nuevoCif, idCliente],
+                "UPDATE cliente SET nombre=?, apellido=?, dni=?, cif=?, email=?, contrasena=? WHERE idCliente=?",
+                [nuevoNombre, nuevoApellido, nuevoDni, nuevoCif,nuevoEmail, nuevoContrasena, idCliente],
                 (err) => {
                     if (err) return res.status(500).json({ error: true, message: "Error en el servidor" });
 
