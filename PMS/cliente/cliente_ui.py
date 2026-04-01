@@ -10,6 +10,9 @@ class Clientes(tk.Frame):
 
         self.endpoint = "/clientes"
 
+        self.agencias_map = {}   # nombre -> cif
+        self.agencias_dict = {}  # cif -> nombre
+
         self.crear_widgets()
         self.cargar_clientes()
 
@@ -24,51 +27,47 @@ class Clientes(tk.Frame):
 
         tk.Label(frame_top, text="Buscar:").grid(row=0, column=0)
 
-        self.entry_buscar = tk.Entry(frame_top)
-        self.entry_buscar.grid(row=0, column=1, padx=5)
+        # input dinámico
+        self.input_busqueda = tk.Entry(frame_top)
+        self.input_busqueda.grid(row=0, column=1, padx=5)
 
         tk.Label(frame_top, text="Buscar por:").grid(row=0, column=2, padx=5)
-        # Diccionario de mapeo
+
         self.campos_busqueda = {
             "Nombre": "nombre",
             "Apellido": "apellido",
             "DNI": "dni",
             "ID Cliente": "idCliente",
             "Email": "email",
-            "Contraseña": "contraseña",
+            "Contraseña": "contrasena",
             "Agencia": "cif"
-
         }
+
         self.combo_busqueda = ttk.Combobox(
             frame_top,
-            values = list(self.campos_busqueda.keys()),
+            values=list(self.campos_busqueda.keys()),
             state="readonly",
-            width=12
+            width=15
         )
-
         self.combo_busqueda.grid(row=0, column=3, padx=5)
-        self.combo_busqueda.current(0)  # valor por defecto
+        self.combo_busqueda.current(0)
 
-        btn_buscar = tk.Button(frame_top, text="Buscar", command=self.buscar_cliente)
-        btn_buscar.grid(row=0, column=4)
+        self.combo_busqueda.bind("<<ComboboxSelected>>", self.cambiar_input_busqueda)
 
+        tk.Button(frame_top, text="Buscar", command=self.buscar_cliente).grid(row=0, column=4)
 
         # ------------------
         # TABLA
         # ------------------
         columnas = ("id", "nombre", "apellido", "dni", "email", "contrasena", "agencia")
+
         frame_tabla = tk.Frame(self)
         frame_tabla.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.tabla = ttk.Treeview(frame_tabla, columns=columnas, show="headings")
-        self.tabla.heading("id", text = "ID")
-        self.tabla.heading("nombre", text = "Nombre")
-        self.tabla.heading("apellido", text = "Apellido")
-        self.tabla.heading("dni", text = "DNI")
-        self.tabla.heading("email", text="Email")
-        self.tabla.heading("contrasena", text="Contraseña")
-        self.tabla.heading("agencia", text="Agencia")
 
+        for col in columnas:
+            self.tabla.heading(col, text=col.capitalize())
 
         scroll = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla.yview)
         self.tabla.configure(yscrollcommand=scroll.set)
@@ -81,7 +80,6 @@ class Clientes(tk.Frame):
         # ------------------
         # BOTONES
         # ------------------
-
         frame_botones = tk.Frame(self)
         frame_botones.pack(pady=10)
 
@@ -91,23 +89,36 @@ class Clientes(tk.Frame):
         tk.Button(frame_botones, text="Refrescar", command=self.cargar_clientes).pack(side="left", padx=5)
 
     # ----------------------
+    # CARGAR AGENCIAS
+    # ----------------------
+    def cargar_agencias(self):
+        agencias = get("/agencia")
+
+        self.agencias_map = {}
+        self.agencias_dict = {}
+
+        if agencias:
+            for a in agencias["result"]:
+                self.agencias_map[a["nombreAgencia"]] = a["cif"]
+                self.agencias_dict[a["cif"]] = a["nombreAgencia"]
+
+    # ----------------------
     # CARGAR CLIENTES
     # ----------------------
-
     def cargar_clientes(self):
 
         datos = get(self.endpoint)
-
         if not datos:
             return
+
+        self.cargar_agencias()
 
         for item in self.tabla.get_children():
             self.tabla.delete(item)
 
-        self.cargar_agencias()
-
         for c in datos["resultClientes"]:
             nombre_agencia = self.agencias_dict.get(c["cif"], "Sin agencia")
+
             self.tabla.insert(
                 "",
                 tk.END,
@@ -121,33 +132,42 @@ class Clientes(tk.Frame):
                     nombre_agencia
                 )
             )
+
     # ----------------------
     # BUSCAR
     # ----------------------
-
     def buscar_cliente(self):
 
-        campo = self.campos_busqueda[self.combo_busqueda.get()]
-        valor = self.entry_buscar.get()
+        campo_label = self.combo_busqueda.get()
+        campo = self.campos_busqueda[campo_label]
+
+        valor = self.input_busqueda.get().strip()
 
         if valor == "":
             self.cargar_clientes()
             return
 
-        endpoint = f"{self.endpoint}/buscar?campo={campo}&valor={valor}"
+        # CASO AGENCIA
+        if campo_label == "Agencia":
 
+            if valor not in self.agencias_map:
+                messagebox.showwarning("Aviso", "Agencia no válida")
+                return
+
+            valor = self.agencias_map[valor]
+
+        endpoint = f"{self.endpoint}/buscar?campo={campo}&valor={valor}"
         datos = get(endpoint)
 
         if not datos:
             return
 
-        # limpiar tabla
+        self.cargar_agencias()
+
         for item in self.tabla.get_children():
             self.tabla.delete(item)
 
-        self.cargar_agencias()
-
-        for c in datos["resultClientes"]:
+        for c in datos["resultCliente"]:
             nombre_agencia = self.agencias_dict.get(c["cif"], "Sin agencia")
 
             self.tabla.insert(
@@ -163,78 +183,92 @@ class Clientes(tk.Frame):
                     nombre_agencia
                 )
             )
-    # -----------------------------
-    # CREAR CLIENTE
-    # -----------------------------
+
+    # ----------------------
+    # CAMBIAR INPUT
+    # ----------------------
+    def cambiar_input_busqueda(self, event=None):
+
+        parent = self.input_busqueda.master
+        self.input_busqueda.destroy()
+
+        campo = self.combo_busqueda.get()
+
+        if campo == "Agencia":
+
+            self.cargar_agencias()
+
+            self.input_busqueda = ttk.Combobox(
+                parent,
+                values=list(self.agencias_map.keys()),
+                state="readonly",
+                width=18
+            )
+
+            self.input_busqueda.grid(row=0, column=1, padx=5)
+
+            if self.agencias_map:
+                self.input_busqueda.current(0)
+
+        else:
+            self.input_busqueda = tk.Entry(parent)
+            self.input_busqueda.grid(row=0, column=1, padx=5)
+
+    # ----------------------
+    # CRUD
+    # ----------------------
     def crear_cliente(self):
+
         formulario = tk.Toplevel(self)
         formulario.title("Crear Cliente")
         formulario.geometry("300x250")
-        formulario.resizable(False, False)
 
-        # Nombre
-        tk.Label(formulario, text="Nombre:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        self.cargar_agencias()
+
+        tk.Label(formulario, text="Nombre").grid(row=0, column=0)
         entry_nombre = tk.Entry(formulario)
-        entry_nombre.grid(row=0, column=1, padx=10, pady=5)
+        entry_nombre.grid(row=0, column=1)
 
-        # Apellido
-        tk.Label(formulario, text="Apellido:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(formulario, text="Apellido").grid(row=1, column=0)
         entry_apellido = tk.Entry(formulario)
-        entry_apellido.grid(row=1, column=1, padx=10, pady=5)
+        entry_apellido.grid(row=1, column=1)
 
-        # DNI
-        tk.Label(formulario, text="DNI:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(formulario, text="DNI").grid(row=2, column=0)
         entry_dni = tk.Entry(formulario)
-        entry_dni.grid(row=2, column=1, padx=10, pady=5)
+        entry_dni.grid(row=2, column=1)
 
-        # CIF/Agencia (Combo)
-        tk.Label(formulario, text="Agencia:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        agencias = get("/agencia")
-        self.agencias_map = {}
-        if agencias:
-            for a in agencias["result"]:
-                self.agencias_map[a["nombreAgencia"]] = a["cif"]
-        combo_agencia = ttk.Combobox(formulario,values=list(self.agencias_map.keys()), state="readonly", width=15)
-        combo_agencia.grid(row=3, column=1, padx=10, pady=5)
+        tk.Label(formulario, text="Agencia").grid(row=3, column=0)
+        combo_agencia = ttk.Combobox(formulario, values=list(self.agencias_map.keys()), state="readonly")
+        combo_agencia.grid(row=3, column=1)
         combo_agencia.current(0)
 
-        # Email
-        tk.Label(formulario, text="Email:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(formulario, text="Email").grid(row=4, column=0)
         entry_email = tk.Entry(formulario)
-        entry_email.grid(row=4, column=1, padx=10, pady=5)
+        entry_email.grid(row=4, column=1)
 
-        # Contraseña
-        tk.Label(formulario, text="Contraseña:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
-        entry_contraseña = tk.Entry(formulario)
-        entry_contraseña.grid(row=5, column=1, padx=10, pady=5)
+        tk.Label(formulario, text="Contraseña").grid(row=5, column=0)
+        entry_pass = tk.Entry(formulario)
+        entry_pass.grid(row=5, column=1)
 
         def crear():
-            nombre_agencia = combo_agencia.get()
-            cif = self.agencias_map[nombre_agencia]
+            cif = self.agencias_map[combo_agencia.get()]
+
             datos = {
-                "nombre": entry_nombre.get().strip(),
-                "apellido": entry_apellido.get().strip(),
-                "dni": entry_dni.get().strip(),
+                "nombre": entry_nombre.get(),
+                "apellido": entry_apellido.get(),
+                "dni": entry_dni.get(),
                 "cif": cif,
-                "email": entry_email.get().strip(),
-                "contrasena": entry_contraseña.get().strip()
+                "email": entry_email.get(),
+                "contrasena": entry_pass.get()
             }
-            endpoint = f"{self.endpoint}/create/"
-            resultado = post(endpoint, datos)
-            if resultado:
+
+            if post(f"{self.endpoint}/create/", datos):
                 messagebox.showinfo("OK", "Cliente creado")
                 formulario.destroy()
                 self.cargar_clientes()
 
-        # Botones
-        tk.Button(formulario, text="Crear", command=crear).grid(row=6, column=0, padx=10, pady=15)
-        tk.Button(formulario, text="Cancelar", command=formulario.destroy).grid(row=6, column=1, padx=10, pady=15)
-
-        # Modal
-        formulario.transient(self)
-        formulario.grab_set()
-        formulario.focus()
-
+        tk.Button(formulario, text="Crear", command=crear).grid(row=6, column=0)
+        tk.Button(formulario, text="Cancelar", command=formulario.destroy).grid(row=6, column=1)
 
     # -----------------------------
     # ACTUALIZAR CLIENTE
@@ -249,10 +283,13 @@ class Clientes(tk.Frame):
         nombre_original = self.tabla.item(seleccionado)["values"][1]
         apellido_original = self.tabla.item(seleccionado)["values"][2]
         dni_original = self.tabla.item(seleccionado)["values"][3]
+        email_original = self.tabla.item(seleccionado)["values"][4]
+        contrasena_original = self.tabla.item(seleccionado)["values"][5]
+
 
         formulario = tk.Toplevel(self)
         formulario.title("Actualizar Cliente")
-        formulario.geometry("300x220")
+        formulario.geometry("300x250")
         formulario.resizable(False, False)
 
         # Nombre
@@ -284,6 +321,18 @@ class Clientes(tk.Frame):
         combo_agencia.grid(row=3, column=1, padx=10, pady=5)
         combo_agencia.current(0)
 
+        # Email
+        tk.Label(formulario, text="Email:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        entry_email = tk.Entry(formulario)
+        entry_email.grid(row=4, column=1, padx=10, pady=5)
+        entry_email.insert(0, email_original)
+
+        # Contraseña
+        tk.Label(formulario, text="Contraseña:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
+        entry_contrasena = tk.Entry(formulario)
+        entry_contrasena.grid(row=5, column=1, padx=10, pady=5)
+        entry_contrasena.insert(0, contrasena_original)
+
         def actualizar():
             nombre_agencia = combo_agencia.get()
             cif = self.agencias_map[nombre_agencia]
@@ -291,7 +340,9 @@ class Clientes(tk.Frame):
                 "nombre": entry_nombre.get().strip(),
                 "apellido": entry_apellido.get().strip(),
                 "dni": entry_dni.get().strip(),
-                "cif": cif
+                "cif": cif,
+                "email": entry_email.get().strip(),
+                "contrasena": entry_contrasena.get().strip()
             }
             endpoint = f"{self.endpoint}/update/{idCliente}"
             resultado = put(endpoint, datos)
@@ -301,8 +352,8 @@ class Clientes(tk.Frame):
                 self.cargar_clientes()
 
         # Botones
-        tk.Button(formulario, text="Actualizar", command=actualizar).grid(row=4, column=0, padx=10, pady=15)
-        tk.Button(formulario, text="Cancelar", command=formulario.destroy).grid(row=4, column=1, padx=10, pady=15)
+        tk.Button(formulario, text="Actualizar", command=actualizar).grid(row=6, column=0, padx=10, pady=15)
+        tk.Button(formulario, text="Cancelar", command=formulario.destroy).grid(row=6, column=1, padx=10, pady=15)
 
         # Modal
         formulario.transient(self)
@@ -313,81 +364,40 @@ class Clientes(tk.Frame):
         seleccionado = self.tabla.focus()
 
         if not seleccionado:
-            messagebox.showwarning("Aviso", "Selecciona un régimen")
             return
 
-        cliente_borrar = self.tabla.item(seleccionado)["values"][0]
+        idCliente = self.tabla.item(seleccionado)["values"][0]
 
-        endpoint = f"{self.endpoint}/delete/{cliente_borrar}"
-
-        resultado = delete(endpoint)
-
-        if resultado:
-            messagebox.showinfo("OK", "Cliente borrado")
+        if delete(f"{self.endpoint}/delete/{idCliente}"):
             self.cargar_clientes()
 
+    # ----------------------
+    # POPUP RESERVAS
+    # ----------------------
     def ver_reservas_cliente(self, event=None):
 
-        cliente_seleccionado = self.tabla.focus()
+        seleccionado = self.tabla.focus()
+        idCliente = self.tabla.item(seleccionado)["values"][0]
 
-        idCliente = self.tabla.item(cliente_seleccionado)["values"][0]
+        reservas = get(f"{self.endpoint}/reservasCliente/{idCliente}")
 
-        endpoint = f"{self.endpoint}/reservasCliente/{idCliente}"
-
-        reservas_cliente = get(endpoint)
-
-        if not reservas_cliente:
+        if not reservas:
             return
-        # ----------------------
-        # POPUP
-        # ----------------------
-        popup = tk.Toplevel(self)
-        popup.title(f"Reservas del cliente {idCliente}")
-        popup.geometry("800x400")
 
-        columnas = (
-            "entrada", "salida", "pagado", "precio", "personas", "hab", "regimen"
+        popup = tk.Toplevel(self)
+        popup.title(f"Reservas {idCliente}")
+
+        tabla = ttk.Treeview(
+            popup,
+            columns=("entrada", "salida", "precio"),
+            show="headings"
         )
 
-        tabla_reservas = ttk.Treeview(popup, columns=columnas, show="headings")
+        tabla.heading("entrada", text="Entrada")
+        tabla.heading("salida", text="Salida")
+        tabla.heading("precio", text="Precio")
 
-        tabla_reservas.heading("entrada", text="Entrada")
-        tabla_reservas.heading("salida", text="Salida")
-        tabla_reservas.heading("pagado", text="Pagado")
-        tabla_reservas.heading("precio", text="Precio Total")
-        tabla_reservas.heading("personas", text="Total Personas")
-        tabla_reservas.heading("hab", text="Habitación")
-        tabla_reservas.heading("regimen", text="Régimen")
+        tabla.pack(fill="both", expand=True)
 
-        for col in columnas:
-            tabla_reservas.column(col, width=100, anchor="center", stretch=True)
-
-        # Cargar reservas
-        for r in reservas_cliente["resultReservas"]:
-            tabla_reservas.insert(
-                "",
-                tk.END,
-                values=(
-                    r["dia_entrada"],
-                    r["dia_salida"],
-                    "Sí" if r["pagado"] else "No",
-                    r["precio_total"],
-                    r["totalPersonas"],
-                    r["codigo"],
-                    r["tipoRegimen"]
-                )
-            )
-        tabla_reservas.pack(fill="both", expand=True, padx=10, pady=10)
-
-
-    def cargar_agencias(self):
-        agencias = get("/agencia")
-        self.agencias_dict = {}
-
-        if agencias:
-            for a in agencias["result"]:
-                self.agencias_dict[a["cif"]] = a["nombreAgencia"]
-
-
-
-
+        for r in reservas["resultReservas"]:
+            tabla.insert("", tk.END, values=(r["dia_entrada"], r["dia_salida"], r["precio_total"]))
