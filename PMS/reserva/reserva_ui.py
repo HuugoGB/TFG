@@ -1,7 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
-from api.webservice import get, post, put, delete
+from api.webservice import get, post, put, delete, patch
+from datetime import datetime, timedelta
+
+
 
 
 class Reserva(tk.Frame):
@@ -77,7 +80,8 @@ class Reserva(tk.Frame):
             "regimen",
             "cif",
             "cliente",
-            "habitacion"
+            "habitacion",
+            "estado"
         )
 
         frame_tabla = tk.Frame(self)
@@ -96,6 +100,7 @@ class Reserva(tk.Frame):
         self.tabla.heading("cif", text="Agencia")
         self.tabla.heading("cliente", text="Cliente")
         self.tabla.heading("habitacion", text="Habitación")
+        self.tabla.heading("estado", text="Estado")
 
         # Ajuste de columnas (MUY recomendable)
         for col in columnas:
@@ -111,12 +116,15 @@ class Reserva(tk.Frame):
         # ------------------
         # BOTONES
         # ------------------
-        frame_botones = tk.Frame(self)
+        frame_botones = tk.LabelFrame(self, text="Funciones")
         frame_botones.pack(pady=10)
 
+        tk.Button(frame_botones, text="Check In", command=self.check_in).pack(side="left", padx=5)
+        tk.Button(frame_botones, text="Check Out", command=self.check_out).pack(side="left", padx=5)
         tk.Button(frame_botones, text="Crear", command=self.crear_reserva).pack(side="left", padx=5)
         tk.Button(frame_botones, text="Editar", command=self.editar_reserva).pack(side="left", padx=5)
-        tk.Button(frame_botones, text="Eliminar", command=self.cancelar_reserva).pack(side="left", padx=5)
+        tk.Button(frame_botones, text="Cancelar", command=self.cancelar_reserva).pack(side="left", padx=5)
+        tk.Button(frame_botones, text="Borrar", command=self.borrar_reserva).pack(side="left", padx=5)
         tk.Button(frame_botones, text="Refrescar", command=self.cargar_reservas).pack(side="left", padx=5)
 
     # ----------------------
@@ -225,7 +233,8 @@ class Reserva(tk.Frame):
                     r["tipoRegimen"],
                     nombre_agencia,
                     r["idCliente"],
-                    r["idHabitacion"]
+                    r["idHabitacion"],
+                    r["estado"]
                 )
             )
 
@@ -235,6 +244,182 @@ class Reserva(tk.Frame):
     # CRUD
     # ----------------------
 
+    def check_in(self):
+        popup = tk.Toplevel(self)
+        popup.title("Check-in de Reservas")
+        popup.geometry("600x400")
+        popup.resizable(False, False)
+
+        # ---------------- FECHA ----------------
+        tk.Label(popup, text="Fecha de Entrada:").pack(pady=5)
+
+        entry_fecha = DateEntry(
+            popup,
+            date_pattern="yyyy-mm-dd",
+            width=12
+        )
+        entry_fecha.pack(pady=5)
+
+        # ---------------- TABLA ----------------
+        columnas = ("idReserva", "cliente", "habitacion", "entrada", "estado")
+
+        tabla = ttk.Treeview(popup, columns=columnas, show="headings")
+
+        for col in columnas:
+            tabla.heading(col, text=col)
+            tabla.column(col, anchor="center", width=100)
+
+        tabla.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # ---------------- CARGAR RESERVAS ----------------
+        def cargar_reservas_fecha(event=None):
+            fecha = entry_fecha.get()
+
+            endpoint = f"/reservas/buscar?campo=dia_entrada&valor={fecha}"
+            datos = get(endpoint)
+
+            # limpiar tabla
+            for item in tabla.get_children():
+                tabla.delete(item)
+
+            if not datos:
+                return
+
+            for r in datos["resultReservas"]:
+                # solo mostrar las que NO estén ya en check-out o posteriores
+                if r["estado"] not in ("Check-out", "Cancelada"):
+                    tabla.insert(
+                        "",
+                        tk.END,
+                        values=(
+                            r["idReserva"],
+                            r["idCliente"],
+                            r["idHabitacion"],
+                            r["dia_entrada"],
+                            r["estado"]
+                        )
+                    )
+
+        entry_fecha.bind("<<DateEntrySelected>>", cargar_reservas_fecha)
+
+        # ---------------- HACER CHECK-IN ----------------
+        def hacer_check_in():
+            seleccionados = tabla.selection()
+
+            if not seleccionados:
+                messagebox.showwarning("Aviso", "Selecciona al menos una reserva")
+                return
+
+            for item in seleccionados:
+                valores = tabla.item(item)["values"]
+                idReserva = valores[0]
+
+                patch(f"{self.endpoint}/estado/{idReserva}", {
+                    "estado": "Check-in"
+                })
+
+            messagebox.showinfo("OK", "Check-in realizado correctamente")
+            popup.destroy()
+            self.cargar_reservas()
+
+        # ---------------- BOTONES ----------------
+        tk.Button(popup, text="Check-in", command=hacer_check_in).pack(padx=10)
+        tk.Button(popup, text="Cerrar", command=popup.destroy).pack(padx=10)
+
+        popup.transient(self)
+        popup.grab_set()
+        popup.focus()
+
+    def check_out(self):
+        popup = tk.Toplevel(self)
+        popup.title("Check-out de Reservas")
+        popup.geometry("700x400")
+        popup.resizable(False, False)
+
+        # ---------------- FECHA ----------------
+        tk.Label(popup, text="Fecha de salida:").pack(pady=5)
+
+        entry_fecha = DateEntry(
+            popup,
+            date_pattern="yyyy-mm-dd",
+            width=16
+        )
+        entry_fecha.pack(pady=5)
+
+        # ---------------- TABLA ----------------
+        columnas = ("id", "cliente", "habitacion", "entrada", "salida", "estado")
+
+        tabla = ttk.Treeview(popup, columns=columnas, show="headings", height=10)
+
+        for col in columnas:
+            tabla.heading(col, text=col.capitalize())
+            tabla.column(col, anchor="center", width=100)
+
+        tabla.pack(pady=10, fill="x", padx=10)
+
+        # ---------------- CARGAR RESERVAS ----------------
+        def cargar_reservas_fecha(event=None):
+            fecha = entry_fecha.get()
+
+            endpoint = f"/reservas/buscar?campo=dia_salida&valor={fecha}"
+            datos = get(endpoint)
+
+            # limpiar tabla
+            for item in tabla.get_children():
+                tabla.delete(item)
+
+            if not datos:
+                return
+
+            for r in datos["resultReservas"]:
+                tabla.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        r["idReserva"],
+                        r["idCliente"],
+                        r["idHabitacion"],
+                        r["dia_entrada"],
+                        r["dia_salida"],
+                        r["estado"]
+                    )
+                )
+
+        # evento al cambiar fecha
+        entry_fecha.bind("<<DateEntrySelected>>", cargar_reservas_fecha)
+
+        # ---------------- CHECK OUT ----------------
+        def hacer_checkout():
+            seleccionados = tabla.selection()
+
+            if not seleccionados:
+                messagebox.showwarning("Aviso", "Selecciona al menos una reserva")
+                return
+
+            for item in seleccionados:
+                valores = tabla.item(item)["values"]
+                idReserva = valores[0]
+
+                patch(f"{self.endpoint}/estado/{idReserva}", {
+                    "estado": "Check-out"
+                })
+
+            messagebox.showinfo("OK", "Check-in realizado correctamente")
+            popup.destroy()
+            self.cargar_reservas()
+
+        # ---------------- BOTONES ----------------
+        frame_botones = tk.Frame(popup)
+        frame_botones.pack(pady=10)
+
+        tk.Button(frame_botones, text="Check-out", command=hacer_checkout).pack(side="left", padx=10)
+        tk.Button(frame_botones, text="Cerrar", command=popup.destroy).pack(side="left", padx=10)
+
+        popup.transient(self)
+        popup.grab_set()
+        popup.focus()
+
+
 
     def cargar_reservas(self):
 
@@ -243,28 +428,58 @@ class Reserva(tk.Frame):
         if not reservas:
             return
 
+        # 🔥 cargar todos los mapas
+        self.cargar_agencias()
+        self.cargar_clientes()
+        self.cargar_habitaciones_map()
+        self.cargar_regimenes()
+        self.cargar_tipos_hab()
+
+        # limpiar tabla
         for item in self.tabla.get_children():
             self.tabla.delete(item)
 
-        self.cargar_agencias()
-
         for r in reservas["resultReservas"]:
+
+            # ---------------- CONVERSIONES ----------------
             nombre_agencia = self.agencias_map.get(r["cif"], "Sin agencia")
+            nombre_cliente = self.clientes_map.get(r["idCliente"], "Desconocido")
+            numero_hab = self.habitaciones_map.get(r["idHabitacion"], "Sin asignar")
+            regimen_desc = self.regimenes_map_inv.get(r["tipoRegimen"], r["tipoRegimen"])
+            tipo_desc = self.tipoHab_map_inv.get(r["codigo"], r["codigo"])
+
+            # ---------------- FORMATO FECHAS ----------------
+            entrada = ""
+            salida = ""
+
+            if r["dia_entrada"]:
+                try:
+                    entrada = datetime.strptime(r["dia_entrada"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                except:
+                    entrada = r["dia_entrada"][:10]
+
+            if r["dia_salida"]:
+                try:
+                    salida = datetime.strptime(r["dia_salida"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                except:
+                    salida = r["dia_salida"][:10]
+
             self.tabla.insert(
                 "",
                 tk.END,
                 values=(
                     r["idReserva"],
-                    r["dia_entrada"],
-                    r["dia_salida"],
+                    entrada,
+                    salida,
                     "Sí" if r["pagado"] else "No",
                     r["precio_total"],
                     r["totalPersonas"],
-                    r["codigo"],
-                    r["tipoRegimen"],
-                    r["cif"],
-                    r["idCliente"],
-                    r["idHabitacion"]
+                    tipo_desc,
+                    regimen_desc,
+                    nombre_agencia,
+                    nombre_cliente,
+                    numero_hab,
+                    r["estado"]
                 )
             )
 
@@ -285,11 +500,13 @@ class Reserva(tk.Frame):
 
 
         tk.Label(formulario, text="Día Salida:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        mañana = datetime.now() + timedelta(days=1)
         entry_salida = DateEntry(
             formulario,
             date_pattern="yyyy-mm-dd",
             width=16
         )
+        entry_salida.set_date(mañana)
         entry_salida.grid(row=1, column=1, padx=10, pady=5)
 
         # ---------------- PAGADO ----------------
@@ -304,22 +521,9 @@ class Reserva(tk.Frame):
         combo_pagado.grid(row=2, column=1, padx=10, pady=5)
         combo_pagado.current(0)
 
-        # ---------------- PERSONAS ----------------
-        tk.Label(formulario, text="Total Personas:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        spin_personas = tk.Spinbox(formulario, from_=1, to=5, width=5)
-        spin_personas.grid(row=3, column=1, padx=10, pady=5)
-
-        # ---------------- CÓDIGO ----------------
-
-        tk.Label(formulario, text="Código:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
-
-        self.tipoHabs_map = {}
-        combo_codigo = ttk.Combobox(formulario, state="readonly", width=18)
-        combo_codigo.grid(row=4, column=1, padx=10, pady=5)
-
+        # ---------------- DISPONIBILIDAD TIPO HABS----------------
         def cargar_tipos():
             pax = spin_personas.get().strip()
-
             if not pax:
                 return
 
@@ -330,19 +534,36 @@ class Reserva(tk.Frame):
             self.tipoHabs_map = {}
             opciones = []
 
-            if tipoHabs and "resultTipoHab" in tipoHabs:
-                for a in tipoHabs["resultTipoHab"]:
-                    self.tipoHabs_map[a["denominacion"]] = a["codigo"]
-                    opciones.append(a["denominacion"])
+            for a in tipoHabs["result"]:
+                self.tipoHabs_map[a["denominacion"]] = a["codigo"]
+                opciones.append(a["denominacion"])
 
             combo_codigo["values"] = opciones
 
             if opciones:
                 combo_codigo.set(opciones[0])
+            else:
+                combo_codigo.set("")
 
-        spin_personas.bind("<KeyRelease>", lambda e: cargar_tipos())
+        # 🔥 EVENTOS CORRECTOS
         entry_entrada.bind("<<DateEntrySelected>>", lambda e: cargar_tipos())
         entry_salida.bind("<<DateEntrySelected>>", lambda e: cargar_tipos())
+
+        # 🔥 CARGA INICIAL (CLAVE)
+        formulario.after(100, cargar_tipos)
+
+        # ---------------- PERSONAS ----------------
+        tk.Label(formulario, text="Total Personas:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        spin_personas = tk.Spinbox(formulario, from_=1, to=5, width=5,command=cargar_tipos)
+        spin_personas.grid(row=3, column=1, padx=10, pady=5)
+
+
+        # ---------------- CÓDIGO ----------------
+        tk.Label(formulario, text="Código:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
+
+        self.tipoHabs_map = {}
+        combo_codigo = ttk.Combobox(formulario, state="readonly", width=18)
+        combo_codigo.grid(row=4, column=1, padx=10, pady=5)
 
         # ---------------- REGIMEN ----------------
         tk.Label(formulario, text="Régimen:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
@@ -409,26 +630,26 @@ class Reserva(tk.Frame):
 
         # ---------------- CREAR ----------------
         def crear():
-            if entry_entrada.get() >= entry_salida.get():
+            formato = "%Y-%m-%d"  # ajusta según tu formato
+
+            entrada = datetime.strptime(entry_entrada.get(), formato)
+            salida = datetime.strptime(entry_salida.get(), formato)
+
+            if entrada >= salida:
                 messagebox.showerror("Error", "La fecha de salida debe ser mayor que la de entrada")
                 return
-            id_hab = self.habitaciones_map.get(combo_habs.get())
-
-            if not id_hab:
-                messagebox.showerror("Error", "Selecciona una habitación válida")
-                return
-
             datos = {
-                "diaEntrada": entry_entrada.get().strip(),
-                "diaSalida": entry_salida.get().strip(),
-                "pagado": combo_pagado.get().split(" - ")[0],
-                "totalPersonas": spin_personas.get().strip(),
+                "dia_entrada": entry_entrada.get().strip(),
+                "dia_salida": entry_salida.get().strip(),
+                "pagado": int(combo_pagado.get().split(" - ")[0]),
+                "totalPersonas": int(spin_personas.get().strip()),
                 "codigo": self.tipoHabs_map.get(combo_codigo.get()),
                 "tipoRegimen": self.regimenes_map.get(combo_regimen.get()),
                 "cif": self.agencias_map.get(combo_agencia.get()),
-                "idCliente": self.clientes_map.get(combo_cliente.get()),
-                "idHabitacion": id_hab
+                "idCliente": self.clientes_map.get(combo_cliente.get())
             }
+
+            print(datos)
 
             endpoint = f"{self.endpoint}/create"
             resultado = post(endpoint, datos)
@@ -473,20 +694,35 @@ class Reserva(tk.Frame):
 
         # ---------------- FECHAS ----------------
         tk.Label(formulario, text="Día Entrada:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        entry_entrada = tk.Entry(formulario)
+        entry_entrada = DateEntry(
+            formulario,
+            date_pattern="yyyy-mm-dd",
+            width=16
+        )
         entry_entrada.grid(row=0, column=1, padx=10, pady=5)
-        entry_entrada.insert(0, diaEntrada_original)
+
 
         tk.Label(formulario, text="Día Salida:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        entry_salida = tk.Entry(formulario)
+        mañana = datetime.now() + timedelta(days=1)
+        entry_salida = DateEntry(
+            formulario,
+            date_pattern="yyyy-mm-dd",
+            width=16
+        )
+        entry_salida.set_date(mañana)
         entry_salida.grid(row=1, column=1, padx=10, pady=5)
-        entry_salida.insert(0, diaSalida_original)
 
         # ---------------- PAGADO ----------------
         tk.Label(formulario, text="Pagado:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        entry_pagado = tk.Entry(formulario)
-        entry_pagado.grid(row=2, column=1, padx=10, pady=5)
-        entry_pagado.insert(0, pagado_original)
+
+        combo_pagado = ttk.Combobox(
+            formulario,
+            values=["0 - No", "1 - Sí"],
+            state="readonly",
+            width=18
+        )
+        combo_pagado.grid(row=2, column=1, padx=10, pady=5)
+        combo_pagado.current(0)
 
         # ---------------- PERSONAS ----------------
         tk.Label(formulario, text="Total Personas:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
@@ -599,6 +835,17 @@ class Reserva(tk.Frame):
         )
         combo_habs.grid(row=8, column=1, padx=10, pady=5)
 
+        # ---------------- ESTADO ----------------
+        tk.Label(formulario, text="Estado:").grid(row=9, column=0, padx=10, pady=5, sticky="e")
+
+        combo_estado = ttk.Combobox(
+            formulario,
+            values=("Pendiente", "Confirmada", "Check-in", "Check-out", "Cancelada"),
+            state="readonly",
+            width=18
+        )
+        combo_estado.grid(row=9, column=1, padx=10, pady=5)
+
         def cargar_habitaciones(seleccionar_original=False):
             codigo = combo_codigo.get()
             if not codigo:
@@ -651,13 +898,14 @@ class Reserva(tk.Frame):
             datos = {
                 "diaEntrada": entry_entrada.get().strip(),
                 "diaSalida": entry_salida.get().strip(),
-                "pagado": entry_pagado.get().strip(),
+                "pagado": combo_pagado.get().strip(),
                 "totalPersonas": entry_personas.get().strip(),
                 "codigo": self.tipoHabs_map.get(combo_codigo.get()),
                 "tipoRegimen": self.regimenes_map.get(combo_regimen.get()),
                 "cif": self.agencias_map.get(combo_agencia.get()),
                 "idCliente": self.clientes_map.get(combo_cliente.get()),
-                "idHabitacion": id_habitacion
+                "idHabitacion": id_habitacion,
+                "estado": combo_estado.get()
             }
 
             endpoint = f"{self.endpoint}/update/{idReserva_original}"
@@ -669,8 +917,8 @@ class Reserva(tk.Frame):
                 self.cargar_reservas()
 
         # ---------------- BOTONES ----------------
-        tk.Button(formulario, text="Actualizar", command=editar).grid(row=9, column=0, padx=10, pady=15)
-        tk.Button(formulario, text="Cancelar", command=formulario.destroy).grid(row=9, column=1, padx=10, pady=15)
+        tk.Button(formulario, text="Actualizar", command=editar).grid(row=10, column=0, padx=10, pady=15)
+        tk.Button(formulario, text="Cancelar", command=formulario.destroy).grid(row=10, column=1, padx=10, pady=15)
 
         formulario.transient(self)
         formulario.grab_set()
@@ -680,12 +928,23 @@ class Reserva(tk.Frame):
         seleccionado = self.tabla.focus()
 
         if not seleccionado:
+            messagebox.showwarning("Aviso", "Selecciona una Reserva")
             return
 
         idReserva = self.tabla.item(seleccionado)["values"][0]
+        patch(f"{self.endpoint}/estado/{idReserva}", {
+            "estado": "Cancelada"
+        })
 
-        if delete(f"{self.endpoint}/delete/{idReserva}"):
-            self.cargar_reservas()
+    def borrar_reserva(self):
+        seleccionado = self.tabla.focus()
+
+        if not seleccionado:
+            messagebox.showwarning("Aviso", "Selecciona una Reserva")
+            return
+
+        idReserva = self.tabla.item(seleccionado)["values"][0]
+        delete(f"{self.endpoint}/delete/{idReserva}")
 
 
     def cargar_agencias(self):
@@ -695,3 +954,38 @@ class Reserva(tk.Frame):
         if agencias:
             for a in agencias["result"]:
                 self.agencias_map[a["nombreAgencia"]] = a["cif"]
+
+    def cargar_clientes(self):
+        clientes = get("/clientes")
+        self.clientes_map = {}
+
+        if clientes:
+            for c in clientes["resultClientes"]:
+                self.clientes_map[c["idCliente"]] = c["nombre"]
+
+
+    def cargar_habitaciones_map(self):
+        habitaciones = get("/habitaciones")
+        self.habitaciones_map = {}
+
+        if habitaciones:
+            for h in habitaciones["result"]:
+                self.habitaciones_map[h["idHabitacion"]] = h["numero_hab"]
+
+
+    def cargar_regimenes(self):
+        regimenes = get("/regimen")
+        self.regimenes_map_inv = {}
+
+        if regimenes:
+            for r in regimenes["resultRegimen"]:
+                self.regimenes_map_inv[r["tipoRegimen"]] = r["descripcion"]
+
+
+    def cargar_tipos_hab(self):
+        tipos = get("/tipo_habitacion")
+        self.tipoHab_map_inv = {}
+
+        if tipos:
+            for t in tipos["resultTipoHab"]:
+                self.tipoHab_map_inv[t["codigo"]] = t["denominacion"]

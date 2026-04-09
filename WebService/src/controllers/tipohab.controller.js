@@ -92,6 +92,55 @@ HAVING habitaciones_disponibles > 0;
     );
 }
 
+function disponibilidadTodos(req, res){
+        const { pax, dia_entrada, dia_salida } = req.query;
+
+    if (!dia_entrada || !dia_salida) {
+        return res.status(400).json({ error: true, message: "Faltan parámetros" });
+    }
+
+    const f1 = new Date(dia_entrada);
+    const f2 = new Date(dia_salida);
+
+    if (isNaN(f1.getTime()) || isNaN(f2.getTime()) || f1 >= f2) {
+        return res.status(400).json({ error: true, message: "Las fechas son incorrectas" });
+    }
+
+    db.query(
+        `SELECT
+    th.precio,
+    th.codigo,
+    th.denominacion,
+    COUNT(h.idHabitacion) AS total_habitaciones,
+    COUNT(h.idHabitacion) - IFNULL(r.reservas, 0) AS habitaciones_disponibles
+FROM tipo_hab th
+INNER JOIN habitacion h
+    ON h.codigo = th.codigo
+LEFT JOIN (
+    SELECT
+        codigo,
+        COUNT(*) AS reservas
+    FROM reserva
+    WHERE dia_entrada < ?
+      AND dia_salida > ?
+    GROUP BY codigo
+) r ON r.codigo = th.codigo
+GROUP BY
+    th.codigo,
+    th.denominacion
+HAVING habitaciones_disponibles > 0;
+        `,
+        [dia_salida, dia_entrada],
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: true, message: "Error en el servidor" });
+            }
+            return res.status(200).json({ error: false, result });
+        }
+    );
+
+}
 
 
-module.exports = { getAllTipoHab, getTipoHabPorPax, createTipoHab, disponibilidadTipoHab }
+module.exports = { getAllTipoHab, getTipoHabPorPax, createTipoHab, disponibilidadTipoHab, disponibilidadTodos}

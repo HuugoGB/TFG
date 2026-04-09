@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 from api.webservice import get, post
+from datetime import datetime, timedelta
+
 
 
 class Habitacion(tk.Frame):
@@ -156,10 +158,6 @@ class Habitacion(tk.Frame):
 
         frame = tk.Frame(self.frame_contenido)
         frame.pack(padx=10, pady=10)
-        self.limpiar_contenido()
-
-        frame = tk.Frame(self.frame_contenido)
-        frame.pack(padx=10, pady=10)
 
         tk.Label(frame, text="Fecha Entrada").grid(row=0, column=0)
         entry_entrada = DateEntry(
@@ -170,38 +168,38 @@ class Habitacion(tk.Frame):
         entry_entrada.grid(row=0, column=1)
 
         tk.Label(frame, text="Fecha Salida").grid(row=1, column=0)
+        mañana = datetime.now() + timedelta(days=1)
         entry_salida = DateEntry(
             frame,
             date_pattern="yyyy-mm-dd",
             width=12
         )
-        entry_salida.grid(row=1, column=1)
+        entry_salida.set_date(mañana)
+        entry_salida.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Label(frame, text="Personas:").grid(row=2, column=0)
-        spin_personas = tk.Spinbox(frame, from_=1, to=6, width=5)
-        spin_personas.grid(row=2, column=1)
+        tabla = ttk.Treeview(
+            self.frame_contenido,
+            columns=("denominacion", "total_habitaciones", "habitaciones_disponibles"),
+            show="headings"
+        )
+
+        tabla.heading("denominacion", text="Tipo Habitación")
+        tabla.heading("total_habitaciones", text="Habitaciones Totales")
+        tabla.heading("habitaciones_disponibles", text="Habitaciones Disponibles")
+
+
+        tabla.pack(fill="both", expand=True, pady=10)
 
         def consultar():
 
-            endpoint = f"{self.endpoint_tipohab}/disponibilidad?pax={spin_personas.get()}&dia_entrada={entry_entrada.get()}&dia_salida={entry_salida.get()}"
+            endpoint = f"{self.endpoint_tipohab}/disponibilidad_todas?dia_entrada={entry_entrada.get()}&dia_salida={entry_salida.get()}"
 
             datos = get(endpoint)
 
             if not datos:
                 return
 
-            tabla = ttk.Treeview(
-                self.frame_contenido,
-                columns=("denominacion", "total_habitaciones", "habitaciones_disponibles"),
-                show="headings"
-            )
 
-            tabla.heading("denominacion", text="Tipo Habitación")
-            tabla.heading("total_habitaciones", text="Habitaciones Totales")
-            tabla.heading("habitaciones_disponibles", text="Habitaciones Disponibles")
-
-
-            tabla.pack(fill="both", expand=True, pady=10)
 
             for r in datos["result"]:
                 tabla.insert("", tk.END, values=(r["denominacion"], r["total_habitaciones"], r["habitaciones_disponibles"]))
@@ -229,13 +227,14 @@ class Habitacion(tk.Frame):
         entry_entrada.grid(row=0, column=1)
 
         tk.Label(frame, text="Fecha Salida").grid(row=1, column=0)
-
+        mañana = datetime.now() + timedelta(days=1)
         entry_salida = DateEntry(
             frame,
             date_pattern="yyyy-mm-dd",
             width=12
         )
-        entry_salida.grid(row=1, column=1)
+        entry_salida.set_date(mañana)
+        entry_salida.grid(row=1, column=1, padx=10, pady=5)
 
         # Tipo de habitación
         tk.Label(frame, text="Tipo Hab").grid(row=2, column=0)
@@ -260,6 +259,19 @@ class Habitacion(tk.Frame):
         if self.tipohab_map:
             combo_tipohab.current(0)
 
+        tabla = ttk.Treeview(
+            self.frame_contenido,
+            columns=("id", "numero", "camas", "codigo"),
+            show="headings"
+        )
+
+        tabla.heading("id", text="ID")
+        tabla.heading("numero", text="Número Hab")
+        tabla.heading("camas", text="Camas")
+        tabla.heading("codigo", text="Tipo")
+
+        tabla.pack(fill="both", expand=True, pady=10)
+
         def consultar():
 
             denominacion = combo_tipohab.get()
@@ -275,18 +287,8 @@ class Habitacion(tk.Frame):
             if not datos:
                 return
 
-            tabla = ttk.Treeview(
-                self.frame_contenido,
-                columns=("id", "numero", "camas", "codigo"),
-                show="headings"
-            )
-
-            tabla.heading("id", text="ID")
-            tabla.heading("numero", text="Número Hab")
-            tabla.heading("camas", text="Camas")
-            tabla.heading("codigo", text="Tipo")
-
-            tabla.pack(fill="both", expand=True, pady=10)
+            for item in tabla.get_children():
+                tabla.delete(item)
 
             for r in datos["resultDisponibilidad"]:
                 tabla.insert(
