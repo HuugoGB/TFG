@@ -11,6 +11,13 @@ const tiposHabitacion = {
     "QUA": { camas: 4}
 };
 
+function getInfoHabs(req, res){
+    db.query("Select * from Habitacion", (err,result) =>{
+        if (err) return res.status(500).json({ error: true, message: "Error en el servidor" });
+        return res.status(200).json({ error: false, result });
+    })
+}
+
 function createHabitaciones(req, res) {
     const { cantidad } = req.params;
     const { codigo } = req.body;
@@ -77,4 +84,4 @@ function disponibilidadHabitacion(req, res){
     
 }
 
-module.exports = { createHabitaciones, disponibilidadHabitacion };
+module.exports = { getInfoHabs, createHabitaciones, disponibilidadHabitacion };

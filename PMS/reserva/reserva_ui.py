@@ -247,29 +247,89 @@ class Reserva(tk.Frame):
     def check_in(self):
         popup = tk.Toplevel(self)
         popup.title("Check-in de Reservas")
-        popup.geometry("600x400")
+        popup.geometry("1100x400")
         popup.resizable(False, False)
 
         # ---------------- FECHA ----------------
-        tk.Label(popup, text="Fecha de Entrada:").pack(pady=5)
+        tk.Label(popup, text="Fecha de entrada:").pack(pady=5)
 
         entry_fecha = DateEntry(
             popup,
             date_pattern="yyyy-mm-dd",
-            width=12
+            width=16
         )
         entry_fecha.pack(pady=5)
 
         # ---------------- TABLA ----------------
-        columnas = ("idReserva", "cliente", "habitacion", "entrada", "estado")
+        columnas = ("id", "Salida", "pagado", "totalPersonas",
+                    "tipoHab", "regimen", "agencia", "cliente",
+                    "habitacion", "estado", "codigo", "diaEntradaRaw")
 
-        tabla = ttk.Treeview(popup, columns=columnas, show="headings")
+        tabla = ttk.Treeview(popup, columns=columnas, show="headings", height=10)
 
         for col in columnas:
-            tabla.heading(col, text=col)
+            tabla.heading(col, text=col.capitalize())
             tabla.column(col, anchor="center", width=100)
 
-        tabla.pack(fill="both", expand=True, padx=10, pady=10)
+        # ocultar columnas
+        tabla.column("codigo", width=0, stretch=False)
+        tabla.column("diaEntradaRaw", width=0, stretch=False)
+
+        tabla.pack(pady=10, fill="x", padx=10)
+
+        # 🔥 cargar habitaciones
+        self.cargar_habitaciones_map()
+
+        # ---------------- EDITAR HABITACION ----------------
+        def editar_habitacion(event):
+            item = tabla.identify_row(event.y)
+            columna = tabla.identify_column(event.x)
+
+            if columna != "#9" or not item:
+                return
+
+            valores = tabla.item(item, "values")
+
+            habitacion_actual = valores[8]
+            codigo = valores[10]
+            dia_entrada = valores[11]
+            dia_salida = valores[1]
+
+            # 🔥 endpoint disponibilidad
+            endpoint = f"/habitaciones/disponibilidad?dia_entrada={dia_entrada}&dia_salida={dia_salida}&codigo={codigo}"
+            datos = get(endpoint)
+
+            if not datos:
+                messagebox.showwarning("Aviso", "No hay habitaciones disponibles")
+                return
+
+            habitaciones_disponibles = [
+                hab["numero_hab"] for hab in datos["resultDisponibilidad"]
+            ]
+
+            x, y, width, height = tabla.bbox(item, columna)
+
+            combo = ttk.Combobox(popup, values=habitaciones_disponibles, state="readonly")
+            combo.place(x=x + tabla.winfo_x(), y=y + tabla.winfo_y(), width=width, height=height)
+
+            if habitacion_actual in habitaciones_disponibles:
+                combo.set(habitacion_actual)
+            else:
+                combo.set("Seleccionar")
+
+            combo.focus()
+
+            def guardar(event=None):
+                nuevos_valores = list(tabla.item(item, "values"))
+                nuevos_valores[8] = combo.get()
+                tabla.item(item, values=nuevos_valores)
+                combo.destroy()
+
+            combo.bind("<<ComboboxSelected>>", guardar)
+            combo.bind("<FocusOut>", lambda e: combo.destroy())
+
+        # 🔥 bind doble click
+        tabla.bind("<Double-1>", editar_habitacion)
 
         # ---------------- CARGAR RESERVAS ----------------
         def cargar_reservas_fecha(event=None):
@@ -278,31 +338,59 @@ class Reserva(tk.Frame):
             endpoint = f"/reservas/buscar?campo=dia_entrada&valor={fecha}"
             datos = get(endpoint)
 
-            # limpiar tabla
+            if not datos or "resultReservas" not in datos:
+                return
+
+            self.cargar_agencias()
+            self.cargar_clientes()
+            self.cargar_regimenes()
+            self.cargar_tipos_hab()
+
             for item in tabla.get_children():
                 tabla.delete(item)
 
-            if not datos:
-                return
-
             for r in datos["resultReservas"]:
-                # solo mostrar las que NO estén ya en check-out o posteriores
-                if r["estado"] not in ("Check-out", "Cancelada"):
-                    tabla.insert(
-                        "",
-                        tk.END,
-                        values=(
-                            r["idReserva"],
-                            r["idCliente"],
-                            r["idHabitacion"],
-                            r["dia_entrada"],
-                            r["estado"]
-                        )
+
+                nombre_agencia = self.agencias_map.get(r["cif"], "Sin agencia")
+                nombre_cliente = self.clientes_map.get(r["idCliente"], "Desconocido")
+                numero_hab = self.habitaciones_map.get(r["idHabitacion"], "Sin asignar")
+                regimen_desc = self.regimenes_map_inv.get(r["tipoRegimen"], r["tipoRegimen"])
+                tipo_desc = self.tipoHab_map_inv.get(r["codigo"], r["codigo"])
+
+                salida = ""
+                if r["dia_salida"]:
+                    try:
+                        salida = datetime.strptime(
+                            r["dia_salida"],
+                            "%Y-%m-%dT%H:%M:%S.%fZ"
+                        ).strftime("%Y-%m-%d")
+                    except:
+                        salida = r["dia_salida"][:10]
+
+                tabla.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        r["idReserva"],
+                        salida,
+                        "Sí" if r["pagado"] else "No",
+                        r["totalPersonas"],
+                        tipo_desc,
+                        regimen_desc,
+                        nombre_agencia,
+                        nombre_cliente,
+                        numero_hab,
+                        r["estado"],  # ✅ corregido
+                        r["codigo"],
+                        r["dia_entrada"],
+                        r["dia_salida"]
                     )
+                )
 
         entry_fecha.bind("<<DateEntrySelected>>", cargar_reservas_fecha)
+        cargar_reservas_fecha()
 
-        # ---------------- HACER CHECK-IN ----------------
+        # ---------------- CHECK-IN ----------------
         def hacer_check_in():
             seleccionados = tabla.selection()
 
@@ -313,8 +401,30 @@ class Reserva(tk.Frame):
             for item in seleccionados:
                 valores = tabla.item(item)["values"]
                 idReserva = valores[0]
+                habitacion = valores[8]
 
-                patch(f"{self.endpoint}/estado/{idReserva}", {
+                if habitacion == "Sin asignar":
+                    messagebox.showwarning(
+                        "Aviso",
+                        "Todas las reservas deben tener una habitación asignada"
+                    )
+                    return
+
+                habitacion_id = None
+                for k, v in self.habitaciones_map.items():
+                    if v == habitacion:
+                        habitacion_id = k
+                        break
+
+                if not habitacion_id:
+                    messagebox.showerror("Error", "Habitación no válida")
+                    return
+
+                patch(f"{self.endpoint}/asignarHabitacion/{idReserva}", {
+                    "idHabitacion": habitacion_id
+                })
+
+                patch(f"{self.endpoint}/cambiarEstado/{idReserva}", {
                     "estado": "Check-in"
                 })
 
@@ -323,8 +433,13 @@ class Reserva(tk.Frame):
             self.cargar_reservas()
 
         # ---------------- BOTONES ----------------
-        tk.Button(popup, text="Check-in", command=hacer_check_in).pack(padx=10)
-        tk.Button(popup, text="Cerrar", command=popup.destroy).pack(padx=10)
+        frame_botones = tk.Frame(popup)
+        frame_botones.pack(pady=10)
+
+        tk.Button(frame_botones, text="Check-in", command=hacer_check_in)\
+            .pack(side="left", padx=10)
+        tk.Button(frame_botones, text="Cerrar", command=popup.destroy)\
+            .pack(side="left", padx=10)
 
         popup.transient(self)
         popup.grab_set()
@@ -333,7 +448,7 @@ class Reserva(tk.Frame):
     def check_out(self):
         popup = tk.Toplevel(self)
         popup.title("Check-out de Reservas")
-        popup.geometry("700x400")
+        popup.geometry("1100x400")
         popup.resizable(False, False)
 
         # ---------------- FECHA ----------------
@@ -347,7 +462,8 @@ class Reserva(tk.Frame):
         entry_fecha.pack(pady=5)
 
         # ---------------- TABLA ----------------
-        columnas = ("id", "cliente", "habitacion", "entrada", "salida", "estado")
+        columnas = ("id", "entrada", "pagado", "totalPersonas",
+                    "tipoHab", "regimen", "agencia", "cliente", "habitacion", "estado")
 
         tabla = ttk.Treeview(popup, columns=columnas, show="headings", height=10)
 
@@ -364,29 +480,55 @@ class Reserva(tk.Frame):
             endpoint = f"/reservas/buscar?campo=dia_salida&valor={fecha}"
             datos = get(endpoint)
 
-            # limpiar tabla
+            if not datos or "resultReservas" not in datos:
+                return
+
+            self.cargar_agencias()
+            self.cargar_clientes()
+            self.cargar_habitaciones_map()
+            self.cargar_regimenes()
+            self.cargar_tipos_hab()
+
             for item in tabla.get_children():
                 tabla.delete(item)
 
-            if not datos:
-                return
-
             for r in datos["resultReservas"]:
+
+                nombre_agencia = self.agencias_map.get(r["cif"], "Sin agencia")
+                nombre_cliente = self.clientes_map.get(r["idCliente"], "Desconocido")
+                numero_hab = self.habitaciones_map.get(r["idHabitacion"], "Sin asignar")
+                regimen_desc = self.regimenes_map_inv.get(r["tipoRegimen"], r["tipoRegimen"])
+                tipo_desc = self.tipoHab_map_inv.get(r["codigo"], r["codigo"])
+
+                entrada = ""
+                if r["dia_entrada"]:
+                    try:
+                        entrada = datetime.strptime(
+                            r["dia_entrada"],
+                            "%Y-%m-%dT%H:%M:%S.%fZ"
+                        ).strftime("%Y-%m-%d")
+                    except:
+                        entrada = r["dia_entrada"][:10]
+
                 tabla.insert(
                     "",
                     tk.END,
                     values=(
                         r["idReserva"],
-                        r["idCliente"],
-                        r["idHabitacion"],
-                        r["dia_entrada"],
-                        r["dia_salida"],
+                        entrada,
+                        "Sí" if r["pagado"] else "No",
+                        r["totalPersonas"],
+                        tipo_desc,
+                        regimen_desc,
+                        nombre_agencia,
+                        nombre_cliente,
+                        numero_hab,
                         r["estado"]
                     )
                 )
 
-        # evento al cambiar fecha
         entry_fecha.bind("<<DateEntrySelected>>", cargar_reservas_fecha)
+        cargar_reservas_fecha()
 
         # ---------------- CHECK OUT ----------------
         def hacer_checkout():
@@ -399,12 +541,22 @@ class Reserva(tk.Frame):
             for item in seleccionados:
                 valores = tabla.item(item)["values"]
                 idReserva = valores[0]
+                pagado = valores[2]
 
-                patch(f"{self.endpoint}/estado/{idReserva}", {
+                # 🔥 1. marcar como pagado usando tu endpoint dinámico
+                endpoint_pagado = f"{self.endpoint}/updateCampo/{idReserva}"
+                datos = {
+                    "campo":"pagado",
+                    "valor":1
+                }
+                patch(endpoint_pagado,datos)
+
+                # 🔥 2. cambiar estado a check-out
+                patch(f"{self.endpoint}/cambiarEstado/{idReserva}", {
                     "estado": "Check-out"
                 })
 
-            messagebox.showinfo("OK", "Check-in realizado correctamente")
+            messagebox.showinfo("OK", "Check-out realizado correctamente")
             popup.destroy()
             self.cargar_reservas()
 
@@ -412,13 +564,14 @@ class Reserva(tk.Frame):
         frame_botones = tk.Frame(popup)
         frame_botones.pack(pady=10)
 
-        tk.Button(frame_botones, text="Check-out", command=hacer_checkout).pack(side="left", padx=10)
-        tk.Button(frame_botones, text="Cerrar", command=popup.destroy).pack(side="left", padx=10)
+        tk.Button(frame_botones, text="Check-out", command=hacer_checkout)\
+            .pack(side="left", padx=10)
+        tk.Button(frame_botones, text="Cerrar", command=popup.destroy)\
+            .pack(side="left", padx=10)
 
         popup.transient(self)
         popup.grab_set()
         popup.focus()
-
 
 
     def cargar_reservas(self):
@@ -953,7 +1106,7 @@ class Reserva(tk.Frame):
 
         if agencias:
             for a in agencias["result"]:
-                self.agencias_map[a["nombreAgencia"]] = a["cif"]
+                self.agencias_map[a["cif"]] = a["nombreAgencia"]
 
     def cargar_clientes(self):
         clientes = get("/clientes")

@@ -1,3 +1,4 @@
+const e = require("express");
 const db = require("../../db");
 
 const ESTADOS = [
@@ -230,6 +231,7 @@ function updateReserva(req, res) {
         const reservaActual = resultReserva[0];
 
         // 🔥 VALIDAR ESTADO
+        /*
         if (estado && estado !== reservaActual.estado) {
             try {
                 estado = cambiarEstadoReserva(reservaActual, estado);
@@ -239,6 +241,8 @@ function updateReserva(req, res) {
         } else {
             estado = reservaActual.estado;
         }
+        */
+       if(!estadoValido(estado)) return res.status(404).json({ error: true, message: "El estado no es valido" });
 
         // Mantener valores si no vienen
         dia_entrada = dia_entrada || reservaActual.dia_entrada;
@@ -250,6 +254,7 @@ function updateReserva(req, res) {
         cif = cif || reservaActual.cif;
         idCliente = idCliente || reservaActual.idCliente;
         idHabitacion = idHabitacion || reservaActual.idHabitacion;
+        estado = estado || reservaActual.estado;
 
         db.query(
             `UPDATE reserva 
@@ -263,6 +268,57 @@ function updateReserva(req, res) {
                 return res.status(200).json({ error: false, message: "Reserva modificada satisfactoriamente" });
             }
         );
+    });
+}
+
+function updateCampoReserva(req, res) {
+
+    const {idReserva} = req.params;
+    const {campo, valor} = req.body;
+
+    // Validar parámetros
+    if (!campo || !valor) {
+        return res.status(400).json({
+            error: true,
+            message: "Faltan campos obligatorios"
+        });
+    }
+
+    // Campos permitidos
+    const camposValidos = ["idReserva", "cliente", "habitacion", "codigo", "cif", "regimen", "pagado", "dia_entrada", "dia_salida"];
+
+    if (!camposValidos.includes(campo)) {
+        return res.status(400).json({
+            error: true,
+            message: "Campo no válido"
+        });
+    }
+
+    // Validar idCliente numérico
+    if (campo === "idReserva" && isNaN(valor)) {
+        return res.status(400).json({
+            error: true,
+            message: "El idReserva debe ser numérico"
+        });
+    }
+
+    // Construir query dinámica
+    const sql = `Update Reserva set ${campo} = ? where idReserva=?`;
+
+    db.query(sql, [valor, idReserva], (err, reservas) => {
+
+        if (err) {
+            return res.status(500).json({
+                error: true,
+                message: "Error en el servidor"
+            });
+        }
+
+        return res.status(200).json({
+            error: false,
+            resultReservas: reservas
+        });
+
     });
 }
 
@@ -309,11 +365,11 @@ function cambiarEstado(req, res) {
         const reserva = result[0];
 
         try {
-            const nuevoEstado = cambiarEstadoReserva(reserva, estado);
+            //const nuevoEstado = cambiarEstadoReserva(reserva, estado);
 
             db.query(
                 "UPDATE reserva SET estado = ? WHERE idReserva = ?",
-                [nuevoEstado, idReserva],
+                [estado, idReserva],
                 (err) => {
                     if (err) return res.status(500).json({ error: true });
 
@@ -331,4 +387,4 @@ function cambiarEstado(req, res) {
 }
 
 
-module.exports = { getAllReservas, getReservas, createReserva, getAllReservasEnFechas, deleteReserva, updateReserva, asignarHabitacion, cambiarEstado };
+module.exports = { getAllReservas, getReservas, createReserva, getAllReservasEnFechas, deleteReserva, updateReserva,updateCampoReserva, asignarHabitacion, cambiarEstado };

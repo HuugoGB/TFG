@@ -3,6 +3,6 @@ const { getAllAgencias, getNombreAgencia } = require("../controllers/agencia.con
 
 const router = express.Router();
 router.get("/",getAllAgencias);
-router.get("/:cif")
+router.get("/",getNombreAgencia);
 
 module.exports = router;
