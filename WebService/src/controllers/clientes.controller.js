@@ -11,7 +11,7 @@ function getAllClientes(req,res){
 function createCliente(req, res) {
     const { nombre, apellido, dni, cif, email, contrasena } = req.body;
 
-    if (!nombre || !apellido || !dni || !cif ||!email || !contrasena) {
+    if (!nombre || !apellido || !dni || cif === undefined ||!email || !contrasena) {
         return res.status(400).json({
             error: true,
             message: "Faltan campos obligatorios"
@@ -36,7 +36,7 @@ function createCliente(req, res) {
 
         //Insertar cliente si no existe
         db.query(
-            "INSERT INTO cliente (nombre, apellido, dni,cif, email, contrasena) VALUES (?,?,?,?,?)",
+            "INSERT INTO cliente (nombre, apellido, dni,cif, email, contrasena) VALUES (?,?,?,?,?,?)",
             [nombre, apellido, dni,cif, email, contrasena],
             (err, result) => {
                 if (err) {
@@ -56,12 +56,12 @@ function createCliente(req, res) {
 }
 
 function inicioSesionCliente(req,res){
-    const {email, contrasena } = req.query;
+    const {email, contrasena, cif } = req.query;
     //Validar que los parametros del url si estan todos y si son validos
     if (!email || !contrasena) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
 
     //Se realiza la consulta para obtener el id del cliente
-    db.query("Select idCliente from cliente where email = ? and contrasena= ?", [email,contrasena], (err, cliente) => {
+    db.query("Select idCliente from cliente where email = ? and contrasena= ? and cif=?", [email,contrasena,cif], (err, cliente) => {
         if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
         return res.status(200).json({ error: false, cliente });
     });
@@ -204,16 +204,32 @@ function getReservasCliente(req, res) {
         if (result.length === 0) return res.status(404).json({ error: true, message: "El id del cliente no existe" });
 
         //Una vez confirmado, se leen todas las reserva del cliente
-        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente AND cliente.idCliente = ?;", [idCliente], (err, resultReservas) => {
+        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente AND cliente.idCliente = ?;", [idCliente], (err, resultReservas) => {
             if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
             return res.status(200).json({ error: false, resultReservas });
         })
 
 
     });
-
-
-
 }
 
-module.exports = { getAllClientes, createCliente, inicioSesionCliente,getCliente, updateCliente, deleteCliente, getReservasCliente };  
+function getReservasClienteEnVigor(req, res) {
+    const { idCliente } = req.params;
+
+    if (!idCliente) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
+    //Se hace una consulta para confirmar que la reserva existe
+    db.query("Select * from cliente where idCliente = ?", [idCliente], (err, result) => {
+        if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
+        if (result.length === 0) return res.status(404).json({ error: true, message: "El id del cliente no existe" });
+
+        //Una vez confirmado, se leen todas las reserva del cliente
+        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente Where cliente.idCliente = ? AND reserva.dia_entrada >= CURDATE()", [idCliente], (err, resultReservas) => {
+            if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
+            return res.status(200).json({ error: false, resultReservas });
+        })
+
+
+    });
+}
+
+module.exports = { getAllClientes, createCliente, inicioSesionCliente,getCliente, updateCliente, deleteCliente, getReservasCliente, getReservasClienteEnVigor };  

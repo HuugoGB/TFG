@@ -4,7 +4,8 @@ const con = mysql.createConnection({
     host: process.env.DB_HOST || "localhost",
     user: process.env.DB_USER || "root",
     password: "",
-    database: process.env.DB_NAME || "MOTOR_RESERVAS"
+    database: process.env.DB_NAME || "MOTOR_RESERVAS",
+    dateStrings: true
 });
 
 con.connect((err) => {

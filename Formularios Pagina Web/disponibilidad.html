@@ -222,7 +222,9 @@
                 totalPersonas: pax,
                 tipoRegimen: tipoRegimen,
                 codigo: codigo,
-                idCliente: idCliente
+                idCliente: idCliente,
+                cif:0,
+                pagado:0
             };
 
             try {
@@ -252,7 +254,7 @@
                     }
 
                     alert("Reserva creada");
-                    window.location.href = "http://localhost/wordpress/?page_id=10";
+                    window.location.href = "http://localhost/wordpress/";
 
                 }
                 else {

@@ -602,20 +602,8 @@ class Reserva(tk.Frame):
             tipo_desc = self.tipoHab_map_inv.get(r["codigo"], r["codigo"])
 
             # ---------------- FORMATO FECHAS ----------------
-            entrada = ""
-            salida = ""
-
-            if r["dia_entrada"]:
-                try:
-                    entrada = datetime.strptime(r["dia_entrada"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
-                except:
-                    entrada = r["dia_entrada"][:10]
-
-            if r["dia_salida"]:
-                try:
-                    salida = datetime.strptime(r["dia_salida"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
-                except:
-                    salida = r["dia_salida"][:10]
+            entrada = self.formatear_fecha(r["dia_entrada"])
+            salida = self.formatear_fecha(r["dia_salida"])
 
             self.tabla.insert(
                 "",
@@ -1142,3 +1130,8 @@ class Reserva(tk.Frame):
         if tipos:
             for t in tipos["resultTipoHab"]:
                 self.tipoHab_map_inv[t["codigo"]] = t["denominacion"]
+
+    def formatear_fecha(self, fecha):
+        if not fecha:
+            return ""
+        return str(fecha)[:10]

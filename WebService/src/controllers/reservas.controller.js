@@ -197,7 +197,6 @@ function deleteReserva(req, res) {
 
         const reserva = reservaResult[0];
 
-        // 🔥 NO BORRAR SI YA ESTÁ EN USO
         if (reserva.estado === "Check-in" || reserva.estado === "Check-out") {
             return res.status(400).json({
                 error: true,
@@ -242,6 +241,7 @@ function updateReserva(req, res) {
             estado = reservaActual.estado;
         }
         */
+       if (!estado) estado = reservaActual.estado;
        if(!estadoValido(estado)) return res.status(404).json({ error: true, message: "El estado no es valido" });
 
         // Mantener valores si no vienen
