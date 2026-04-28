@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDS</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">GDS Agencia</a>
+
+            <div id="authButtons">
+                <a class="btn btn-outline-light me-2" href="login.html">Log In</a>
+                <a class="btn btn-warning" href="signin.html">Sign In</a>
+            </div>
+
+            <div id="logoutButton" style="display:none;">
+                <button class="btn btn-danger">Cerrar sesión</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="container mt-5">
+
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">Bienvenido a tu GDS</h1>
+            <p class="text-muted">Gestiona las reservas y clientes de tu agencia</p>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- RESERVAS -->
+            <div class="col-md-6" id="cardReservas">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">Reservas</h3>
+                        <p class="card-text">Gestiona las reservas de tus clientes</p>
+                        <a href="reservas.html" class="btn btn-primary">Ir a Reservas</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLIENTES -->
+            <div class="col-md-6" id="cardClientes">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">Clientes</h3>
+                        <p class="card-text">Gestiona a tus clientes</p>
+                        <a href="clientes.html" class="btn btn-success">Ir a Clientes</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="text-center mt-5 py-4 text-muted">
+        © 2026 GDS Hotel System
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>

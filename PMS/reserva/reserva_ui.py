@@ -827,6 +827,7 @@ class Reserva(tk.Frame):
         cif_original = valores[8]
         idCliente_original = valores[9]
         idHabitacion_original = valores[10]
+        estado_original = valores[11]
 
         formulario = tk.Toplevel(self)
         formulario.title("Actualizar Reserva")
@@ -841,6 +842,8 @@ class Reserva(tk.Frame):
             width=16
         )
         entry_entrada.grid(row=0, column=1, padx=10, pady=5)
+        entry_entrada.set_date(diaEntrada_original)
+
 
 
         tk.Label(formulario, text="Día Salida:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
@@ -852,6 +855,8 @@ class Reserva(tk.Frame):
         )
         entry_salida.set_date(mañana)
         entry_salida.grid(row=1, column=1, padx=10, pady=5)
+        entry_salida.set_date(diaSalida_original)
+
 
         # ---------------- PAGADO ----------------
         tk.Label(formulario, text="Pagado:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
@@ -863,8 +868,10 @@ class Reserva(tk.Frame):
             width=18
         )
         combo_pagado.grid(row=2, column=1, padx=10, pady=5)
-        combo_pagado.current(0)
-
+        if str(pagado_original) == "1":
+            combo_pagado.set("1 - Sí")
+        else:
+            combo_pagado.set("0 - No")
         # ---------------- PERSONAS ----------------
         tk.Label(formulario, text="Total Personas:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
         entry_personas = tk.Entry(formulario)
@@ -890,10 +897,7 @@ class Reserva(tk.Frame):
         combo_codigo.grid(row=4, column=1, padx=10, pady=5)
 
         # Seleccionar original
-        for k, v in self.tipoHabs_map.items():
-            if v == codigo_original:
-                combo_codigo.set(k)
-                break
+        self.set_combo_by_value(combo_codigo, self.tipoHabs_map, codigo_original)
 
         # ---------------- REGIMEN ----------------
         tk.Label(formulario, text="Régimen:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
@@ -913,10 +917,7 @@ class Reserva(tk.Frame):
         )
         combo_regimen.grid(row=5, column=1, padx=10, pady=5)
 
-        for k, v in self.regimenes_map.items():
-            if v == tipoRegimen_original:
-                combo_regimen.set(k)
-                break
+        self.set_combo_by_value(combo_regimen, self.regimenes_map, tipoRegimen_original)
 
         # ---------------- AGENCIA ----------------
         tk.Label(formulario, text="Agencia:").grid(row=6, column=0, padx=10, pady=5, sticky="e")
@@ -936,10 +937,7 @@ class Reserva(tk.Frame):
         )
         combo_agencia.grid(row=6, column=1, padx=10, pady=5)
 
-        for k, v in self.agencias_map.items():
-            if str(v) == str(cif_original):
-                combo_agencia.set(k)
-                break
+        self.set_combo_by_value(combo_agencia, self.agencias_map, cif_original)
 
         # ---------------- CLIENTE ----------------
         tk.Label(formulario, text="Cliente:").grid(row=7, column=0, padx=10, pady=5, sticky="e")
@@ -959,10 +957,7 @@ class Reserva(tk.Frame):
         )
         combo_cliente.grid(row=7, column=1, padx=10, pady=5)
 
-        for k, v in self.clientes_map.items():
-            if v == idCliente_original:
-                combo_cliente.set(k)
-                break
+        self.set_combo_by_value(combo_cliente, self.clientes_map, idCliente_original)
 
         # ---------------- HABITACIONES ----------------
         tk.Label(formulario, text="Habitación:").grid(row=8, column=0, padx=10, pady=5, sticky="e")
@@ -986,6 +981,7 @@ class Reserva(tk.Frame):
             width=18
         )
         combo_estado.grid(row=9, column=1, padx=10, pady=5)
+        combo_estado.set(estado_original)
 
         def cargar_habitaciones(seleccionar_original=False):
             codigo = combo_codigo.get()
@@ -1033,9 +1029,6 @@ class Reserva(tk.Frame):
         def editar():
             id_habitacion = self.habitaciones_map.get(combo_habs.get())
 
-            if not id_habitacion:
-                messagebox.showerror("Error", "Selecciona una habitación válida")
-                return
             datos = {
                 "diaEntrada": entry_entrada.get().strip(),
                 "diaSalida": entry_salida.get().strip(),
@@ -1135,3 +1128,9 @@ class Reserva(tk.Frame):
         if not fecha:
             return ""
         return str(fecha)[:10]
+
+    def set_combo_by_value(self,combo, mapa, valor_real):
+        for texto, valor in mapa.items():
+            if str(valor) == str(valor_real):
+                combo.set(texto)
+                return

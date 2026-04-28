@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signin - GDS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="main.html">GDS Agencia</a>
+        </div>
+    </nav>
+    <main class=" d-flex justify-content-center align-items-center" style="min-height: 85vh;">
+        <div class="card shadow-sm p-4" style="min-width: 350px; max-width: 400px; width: 100%;">
+            <div class="text-center mb-3">
+                <h1 class="h3 fw-bold">Sign In</h1>
+            </div>
+            <form id="signin">
+                <div class="mb-3">
+                    <label class="form-label">CIF</label>
+                    <input id="cif" name="cif" type="text" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre Agencia</label>
+                    <input id="nombreAgencia" name="nombreAgencia" type="text" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Correo Electrónico</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Contraseña</label>
+                    <input id="contrasena" name="contrasena" type="password" class="form-control" placeholder="**********">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Numero teléfono</label>
+                    <input id="numTelefono" name="numTelefono" type="tel" class="form-control" placeholder="+34 666 666 666" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">URL</label>
+                    <input id="url" name="url" type="url" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    Registrar Agencia 
+                </button>
+            </form>
+        </div>
+    </main>
+    <footer class="text-center text-muted py-3">
+        © 2026 GDS Hotel System
+    </footer>
+
+    <script src="js/signin.js"></script>
+
+</body>
+
+</html>
