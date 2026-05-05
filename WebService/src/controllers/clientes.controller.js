@@ -9,9 +9,9 @@ function getAllClientes(req,res){
 }
 
 function createCliente(req, res) {
-    const { nombre, apellido, dni, cif, email, contrasena } = req.body;
+    const { nombre, apellido, dni, cif, email, contrasena, numTelefono } = req.body;
 
-    if (!nombre || !apellido || !dni || cif === undefined ||!email || !contrasena) {
+    if (!nombre || !apellido || !dni || cif === undefined ||!email || !contrasena || !numTelefono) {
         return res.status(400).json({
             error: true,
             message: "Faltan campos obligatorios"
@@ -36,8 +36,8 @@ function createCliente(req, res) {
 
         //Insertar cliente si no existe
         db.query(
-            "INSERT INTO cliente (nombre, apellido, dni,cif, email, contrasena) VALUES (?,?,?,?,?,?)",
-            [nombre, apellido, dni,cif, email, contrasena],
+            "INSERT INTO cliente (nombre, apellido, dni,cif, email, contrasena, numTelefono) VALUES (?,?,?,?,?,?,?)",
+            [nombre, apellido, dni,cif, email, contrasena, numTelefono],
             (err, result) => {
                 if (err) {
                     return res.status(500).json({
@@ -119,7 +119,7 @@ function getCliente(req, res) {
 
 function updateCliente(req, res) {
     const { idCliente } = req.params;
-    var { nombre, apellido, dni, cif, email, contrasena } = req.body;
+    var { nombre, apellido, dni, cif, email, contrasena, numTelefono } = req.body;
     //Validar que los parametros del url si estan todos y si son validos
     if (!idCliente) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
 
@@ -138,9 +138,10 @@ function updateCliente(req, res) {
         const nuevoCif = cif || cliente.cif;
         const nuevoEmail = email || cliente.email;
         const nuevoContrasena = contrasena || cliente.contrasena;
+        const nuevoNumTelefono = numTelefono || cliente.numTelefono;
 
         //Comprobamos que el cif de la agencia si no este vacio, sea uno valido
-        if (isNaN(cif)) {
+        if (cif !== undefined && cif !== null && cif !== "") {
             db.query("Select * from agencia where cif = ?", [cif], (err, result) => {
                 if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
                 if (result.length === 0) return res.status(404).json({ error: true, message: "El cif de la agencia no existe" });
@@ -154,8 +155,8 @@ function updateCliente(req, res) {
 
         function actualizarCliente() {
             db.query(
-                "UPDATE cliente SET nombre=?, apellido=?, dni=?, cif=?, email=?, contrasena=? WHERE idCliente=?",
-                [nuevoNombre, nuevoApellido, nuevoDni, nuevoCif,nuevoEmail, nuevoContrasena, idCliente],
+                "UPDATE cliente SET nombre=?, apellido=?, dni=?, cif=?, email=?,numTelefono=?, contrasena=? WHERE idCliente=?",
+                [nuevoNombre, nuevoApellido, nuevoDni, nuevoCif,nuevoEmail, nuevoNumTelefono, nuevoContrasena, idCliente],
                 (err) => {
                     if (err) return res.status(500).json({ error: true, message: "Error en el servidor" });
 
@@ -187,15 +188,11 @@ function deleteCliente(req, res) {
             if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
             return res.status(200).json({ error: false, message: "Cliente borrado satisfactoriamente" });
         })
-
-
     });
-
-
 }
 
 function getReservasCliente(req, res) {
-    const { idCliente } = req.params;
+    const { idCliente } = req.query;
 
     if (!idCliente) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
     //Se hace una consulta para confirmar que la reserva existe
@@ -204,7 +201,7 @@ function getReservasCliente(req, res) {
         if (result.length === 0) return res.status(404).json({ error: true, message: "El id del cliente no existe" });
 
         //Una vez confirmado, se leen todas las reserva del cliente
-        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente AND cliente.idCliente = ?;", [idCliente], (err, resultReservas) => {
+        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva,estado FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente AND cliente.idCliente = ?;", [idCliente], (err, resultReservas) => {
             if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
             return res.status(200).json({ error: false, resultReservas });
         })
@@ -214,7 +211,7 @@ function getReservasCliente(req, res) {
 }
 
 function getReservasClienteEnVigor(req, res) {
-    const { idCliente } = req.params;
+    const { idCliente } = req.query;
 
     if (!idCliente) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
     //Se hace una consulta para confirmar que la reserva existe

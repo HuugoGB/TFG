@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
@@ -10,54 +10,148 @@
 </head>
 
 <body class="bg-light">
+    
 
-    <!-- HEADER -->
-    <header class="bg-dark text-white py-3">
-        <div class="container">
+<!-- 🔝 HEADER -->
+<header class="bg-dark text-white py-3">
+    <div class="container">
 
-            <!-- Top -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <a class="navbar-brand fw-bold" href="main.html">GDS Agencia</a>
-                <button onclick="window.location.href='nuevoCliente.html'" class="btn btn-warning">+ Nuevo
-                    Cliente</button>
-            </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a class="navbar-brand fw-bold" href="main.html">GDS Agencia</a>
+            <button onclick="window.location.href='nuevoCliente.html'" class="btn btn-warning">
+                + Nuevo Cliente
+            </button>
+        </div>
 
-            <!-- Search -->
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="Buscar por nombre, email o DNI...">
-                <button class="btn btn-sm btn-primary me-2">🔍</button>
+        <!-- 🔎 BUSCADOR -->
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Buscar por nombre, email o DNI...">
+            <button class="btn btn-primary">🔍</button>
+        </div>
+
+    </div>
+</header>
+
+<!-- 🧠 MAIN -->
+<main class="container mt-4">
+
+    <div class="row">
+
+        <!-- 📋 LISTADO CLIENTES -->
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Clientes</h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="listaClientes" class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
 
         </div>
-    </header>
 
-    <!-- MAIN -->
-    <main class="container mt-4">
+        <!-- 📦 DETALLE CLIENTE -->
+        <div class="col-lg-4">
 
-        <h2 class="mb-3">Gestión de clientes</h2>
+            <div class="card shadow-sm">
 
-        <ul class="list-group">
-
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-
-                <span>Cliente ejemplo</span>
-
-                <div>
-                    <button class="btn btn-sm btn-primary me-2">Editar</button>
-                    <button class="btn btn-sm btn-danger">Eliminar</button>
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Detalle Cliente</h5>
                 </div>
 
-            </li>
+                <div class="card-body">
 
-        </ul>
+                    <form id="detalleCliente">
 
-    </main>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input id="nombreCliente" class="form-control" type="text">
+                        </div>
 
-    <footer class="text-center text-muted py-3">
-        © 2026 GDS Hotel System
-    </footer>
+                        <div class="mb-3">
+                            <label class="form-label">Apellido</label>
+                            <input id="apellido" class="form-control" type="text">
+                        </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">DNI</label>
+                            <input id="dni" class="form-control" type="text">
+                        </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input id="email" class="form-control" type="email">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input id="telefono" class="form-control" type="tel">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Guardar cambios
+                            </button>
+                            <button type="button" class="btn btn-success">
+                                + Nueva Reserva
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 🧾 HISTORIAL -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Historial de Reservas</h5>
+        </div>
+
+        <div class="table-responsive">
+            <table id="listaReservas" class="table table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tipo Habitacion</th>
+                        <th>Regimen</th>
+                        <th>Fecha Entrada</th>
+                        <th>Fecha Salida</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<!-- 🔻 FOOTER -->
+<footer class="text-center text-muted py-3">
+    © 2026 GDS Hotel System
+</footer>
+
+<script src="js/clientes.js"></script>
 </body>
-
 </html>

@@ -8,8 +8,8 @@ router.get("/inicioSesion",inicioSesionCliente);
 router.post("/create", createCliente);
 router.get("/buscar", getCliente);
 router.delete("/delete/:idCliente", deleteCliente);
-router.get("/reservasCliente/:idCliente", getReservasCliente);
-router.get("/reservasEnVigor/:idCliente",getReservasClienteEnVigor)
+router.get("/reservasCliente/", getReservasCliente);
+router.get("/reservasEnVigor/",getReservasClienteEnVigor)
 router.put("/update/:idCliente", updateCliente);
 
 module.exports = router;
