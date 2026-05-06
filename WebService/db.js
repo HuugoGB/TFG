@@ -1,18 +1,20 @@
 const mysql = require('mysql');
 
 const con = mysql.createConnection({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
+    host: "localhost",
+    user: "root",
     password: "",
-    database: process.env.DB_NAME || "MOTOR_RESERVAS",
-    dateStrings: true
+    database: "MOTOR_RESERVAS",
+    dateStrings: true,
+    connectTimeout: 10000
 });
 
 con.connect((err) => {
     if (err) {
-        console.error("Error conectando a la base de datos:", err);
+        console.error("ERROR CONECTANDO MYSQL:", err.message);
         return;
     }
+
     console.log("Conexión a MySQL establecida correctamente");
 });
 

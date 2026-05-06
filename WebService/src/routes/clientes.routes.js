@@ -1,5 +1,5 @@
 const express = require("express");
-const { getAllClientes, createCliente, inicioSesionCliente,getCliente, deleteCliente, getReservasCliente, getReservasClienteEnVigor,updateCliente } = require("../controllers/clientes.controller");
+const { getAllClientes, createCliente, inicioSesionCliente,getCliente, buscarCliente, deleteCliente, getReservasCliente, getReservasClienteEnVigor,updateCliente } = require("../controllers/clientes.controller");
 
 const router = express.Router();
 
@@ -11,5 +11,6 @@ router.delete("/delete/:idCliente", deleteCliente);
 router.get("/reservasCliente/", getReservasCliente);
 router.get("/reservasEnVigor/",getReservasClienteEnVigor)
 router.put("/update/:idCliente", updateCliente);
+router.get("/buscarValor",buscarCliente);
 
 module.exports = router;

@@ -1,48 +1,57 @@
-document.addEventListener("DOMContentLoaded", async function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-    const tabla = document.getElementById("listaClientes");
-    const tbody = tabla.querySelector("tbody");
+    cargarClientes();
 
-    try {
-        // ⚠️ Usa el CIF de la agencia logueada
-        const cif = localStorage.getItem("agenciaCIF");
+    document.getElementById("btnBuscar").addEventListener("click", async function () {
 
-        const url = `http://localhost:3000/api/clientes/buscar?campo=cif&valor=${cif}`;
+        const texto = document.getElementById("inputBuscar").value.trim();
 
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (data.error) {
-            alert("Error al cargar clientes");
+        if (!texto) {
+            cargarClientes();
             return;
         }
 
-        const clientes = data.resultCliente;
+        try {
+            const url = `http://localhost:3000/api/clientes/buscarValor?valor=${texto}`;
 
-        // 🔁 Insertar clientes
-        clientes.forEach(cliente => {
-            const fila = document.createElement("tr");
-            fila.setAttribute("data-id", cliente.idCliente);
-            fila.innerHTML = `
-                <td>${cliente.nombre} ${cliente.apellido}</td>
-                <td>${cliente.email}</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary btn-ver" data-id="${cliente.idCliente}">
-                        Ver
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-borrar" data-id="${cliente.idCliente}">
-                        Borrar
-                    </button>
-                </td>
-            `;
+            const res = await fetch(url);
+            const data = await res.json();
 
-            tbody.appendChild(fila);
-        });
+            if (data.error) {
+                alert("Error en la búsqueda");
+                return;
+            }
 
-    } catch (error) {
-        console.error("Error cargando clientes:", error);
-        alert("Error de conexión con el servidor");
-    }
+            listarClientes(data.resultClientes);
+
+        } catch (error) {
+            console.error("Error buscando clientes:", error);
+            alert("Error de conexión");
+        }
+    });
+
+     document.getElementById("btnLimpiar").addEventListener("click", function () {
+
+        // 🧠 limpiar buscador
+        document.getElementById("inputBuscar").value = "";
+
+        // 🧠 reset cliente actual
+        clienteActualId = null;
+
+        // 🧠 limpiar formulario derecho
+        document.getElementById("nombreCliente").value = "";
+        document.getElementById("apellido").value = "";
+        document.getElementById("dni").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("telefono").value = "";
+
+        // 🧠 limpiar reservas
+        document.querySelector("#listaReservas tbody").innerHTML = "";
+
+        // 🧠 recargar todos los clientes
+        cargarClientes();
+    });
+
 
 });
 
@@ -70,6 +79,59 @@ document.addEventListener("click", function (e) {
     }
 
 });
+
+async function cargarClientes() {
+    try {
+        const cif = localStorage.getItem("agenciaCIF");
+
+        const url = `http://localhost:3000/api/clientes/buscar?campo=cif&valor=${cif}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+            alert("Error al cargar clientes");
+            return;
+        }
+
+        listarClientes(data.resultCliente);
+
+    } catch (error) {
+        console.error("Error cargando clientes:", error);
+        alert("Error de conexión con el servidor");
+    }
+}
+
+function listarClientes(clientes) {
+    const tbody = document.querySelector("#listaClientes tbody");
+    tbody.innerHTML = "";
+
+    if (clientes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3">No se encontraron clientes</td></tr>`;
+        return;
+    }
+
+    clientes.forEach(cliente => {
+        const fila = document.createElement("tr");
+
+        fila.setAttribute("data-id", cliente.idCliente);
+
+        fila.innerHTML = `
+            <td>${cliente.nombre} ${cliente.apellido}</td>
+            <td>${cliente.email}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary btn-ver" data-id="${cliente.idCliente}">
+                    Ver
+                </button>
+                <button class="btn btn-sm btn-outline-danger btn-borrar" data-id="${cliente.idCliente}">
+                    Borrar
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(fila);
+    });
+}
 
 async function cargarDetalleCliente(idCliente) {
     try {
@@ -129,7 +191,8 @@ async function listarReservasCliente(idCliente) {
         })
 
     } catch (error) {
-
+    console.error("Error cargando reservas:", error);
+    alert("Error cargando reservas");
     }
 
 }

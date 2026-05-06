@@ -3,6 +3,8 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 
+const con = require("./db.js")
+
 const agenciaRoutes = require("./src/routes/agencia.routes.js")
 const reservasRoutes = require("./src/routes/reservas.routes.js");
 const clientesRoutes = require("./src/routes/clientes.routes.js");

@@ -138,8 +138,8 @@ function updateCliente(req, res) {
         const nuevoCif = cif || cliente.cif;
         const nuevoEmail = email || cliente.email;
         const nuevoContrasena = contrasena || cliente.contrasena;
-        const nuevoNumTelefono = numTelefono || cliente.numTelefono;
-
+        const nuevoNumTelefono = numTelefono !== undefined ? numTelefono : cliente.numTelefono;
+        
         //Comprobamos que el cif de la agencia si no este vacio, sea uno valido
         if (cif !== undefined && cif !== null && cif !== "") {
             db.query("Select * from agencia where cif = ?", [cif], (err, result) => {
@@ -170,6 +170,20 @@ function updateCliente(req, res) {
     });
 }
 
+function buscarCliente(req, res){
+    const {valor} = req.query;
+
+    if(!valor) return res.status(400).json({ error: true, message: "Faltan campos obligatorios" });
+
+    db.query(
+        `SELECT * FROM cliente WHERE nombre = ? OR email = ? OR dni = ? OR apellido = ?`,
+        [valor, valor, valor, valor],
+        (err, resultClientes) => {
+        if(err) return res.status(500).json({ error: true, message: "Error con el servidor" });
+        if (resultClientes.length === 0) return res.status(404).json({ error: true, message: "El campo del cliente no existe" });
+        return res.status(200).json({error:false, resultClientes});
+    })
+}
 
 
 
@@ -201,7 +215,7 @@ function getReservasCliente(req, res) {
         if (result.length === 0) return res.status(404).json({ error: true, message: "El id del cliente no existe" });
 
         //Una vez confirmado, se leen todas las reserva del cliente
-        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva,estado FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente AND cliente.idCliente = ?;", [idCliente], (err, resultReservas) => {
+        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva,estado FROM reserva where idCliente = ?;", [idCliente], (err, resultReservas) => {
             if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
             return res.status(200).json({ error: false, resultReservas });
         })
@@ -220,7 +234,7 @@ function getReservasClienteEnVigor(req, res) {
         if (result.length === 0) return res.status(404).json({ error: true, message: "El id del cliente no existe" });
 
         //Una vez confirmado, se leen todas las reserva del cliente
-        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva FROM reserva JOIN cliente ON reserva.idCliente = cliente.idCliente Where cliente.idCliente = ? AND reserva.dia_entrada >= CURDATE()", [idCliente], (err, resultReservas) => {
+        db.query("SELECT dia_entrada,dia_salida,pagado,precio_total,totalPersonas,codigo,tipoRegimen,idReserva FROM reserva where idCliente = ? AND reserva.dia_entrada >= CURDATE()", [idCliente], (err, resultReservas) => {
             if (err) return res.status(500).json({ error: true, message: "Error con el servidor" });
             return res.status(200).json({ error: false, resultReservas });
         })
@@ -229,4 +243,4 @@ function getReservasClienteEnVigor(req, res) {
     });
 }
 
-module.exports = { getAllClientes, createCliente, inicioSesionCliente,getCliente, updateCliente, deleteCliente, getReservasCliente, getReservasClienteEnVigor };  
+module.exports = { getAllClientes, createCliente, inicioSesionCliente,getCliente, buscarCliente, updateCliente, deleteCliente, getReservasCliente, getReservasClienteEnVigor };  
