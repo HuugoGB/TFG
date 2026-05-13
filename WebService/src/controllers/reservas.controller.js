@@ -175,7 +175,9 @@ function getAllReservasEnFechas(req, res) {
     //Parsean los datos en fechas y se confirman que estan bien parseados
     const primerDia = new Date(dia_1);
     const segundoDia = new Date(dia_2);
-    if (isNaN(primerDia) || isNaN(segundoDia) || primerDia >= segundoDia) return res.status(400).json({ error: true, message: "Las fechas son incorrectas" });
+    if (isNaN(primerDia.getTime()) ||
+    isNaN(segundoDia.getTime()) ||
+    primerDia >= segundoDia) return res.status(400).json({ error: true, message: "Las fechas son incorrectas" });
 
     //Se hace la consulta a la base de datos y se muestran todas las reserva que haya entre las fechas indicadas
     db.query("SELECT * FROM reserva where reserva.dia_entrada >= ? AND reserva.dia_salida <= ?;", [primerDia, segundoDia], (err, reservas) => {

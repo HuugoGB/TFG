@@ -77,13 +77,94 @@ function crearAgencia(){
     });
 }
 
-function getReservasAgencia(req, res){
+function getReservasAgenciaEnFechas(req, res){
+    const { dia_1, dia_2,cif } = req.query;
+
+    //Validar que todos los datos se han insertado en el endpoint
+    if (!dia_1 || !dia_2 || !cif) return res.status(400).json({ error: true, message: "Faltan campos obligatorios buscar las reservas" });
+
+    //Parsean los datos en fechas y se confirman que estan bien parseados
+    const primerDia = new Date(dia_1);
+    const segundoDia = new Date(dia_2);
+    if (isNaN(primerDia.getTime()) ||
+    isNaN(segundoDia.getTime()) ||
+    primerDia >= segundoDia) return res.status(400).json({ error: true, message: "Las fechas son incorrectas" });
+
+    //Se hace la consulta a la base de datos y se muestran todas las reserva que haya entre las fechas indicadas
+    db.query("SELECT * FROM reserva where reserva.dia_entrada >= ? AND reserva.dia_salida <= ? and cif=?;", [primerDia, segundoDia,cif], (err, reservasAgencia) => {
+        if (err) return res.status(500).json({ error: true, message: "Error en el sistema cliente" });
+        return res.status(200).json({ error: false, totalReservas: reservasAgencia.length, reservasAgencia })
+    })
 
 
 }
 
-function getReservasClienteAgencia(req, res){
-    
+function createReserva(req, res) {
+    const { dia_entrada, dia_salida, totalPersonas, tipoRegimen, codigo, precioTotal,idCliente, cif, estado } = req.body;
+
+    //Validar que todos los datos se han insertado en el endpoint
+    if (dia_entrada === undefined ||
+        dia_salida === undefined ||
+        totalPersonas === undefined ||
+        tipoRegimen === undefined ||
+        codigo === undefined ||
+        idCliente === undefined ||
+        cif === undefined ||
+        pagado === undefined) {
+        return res.status(400).json({ error: true, message: "Faltan campos obligatorios para crear la reserva" })
+    }
+
+    //Validar que las fechas son correctas y validas
+    const checkIn = new Date(dia_entrada);
+    const checkOut = new Date(dia_salida);
+    if (isNaN(checkIn) || isNaN(checkOut) || checkIn >= checkOut) {
+        return res.status(400).json({ error: true, message: "Las fechas son incorrectas" });
+    }
+
+
+    //Validar que la cantidad de personas que quieren reservar una habitacion pueden entrar en el tipo seleccionado
+    db.query("Select codigo,pax, precio from tipo_hab Where codigo = ?", [codigo], (err, regimenResult) => {
+        if (err) return res.status(500).json({ error: true, message: "Error en el sistema" });
+        if (regimenResult === 0) return res.status(404).json({ error: true, message: "El tipo de habitacion no existe" });
+
+        const tipoHab = regimenResult[0];
+        if (totalPersonas > tipoHab.pax) {
+            return res.status(400).json({ error: true, message: "La cantidad de personas es superior al de los clientes permitidos en la hab" });
+        }
+
+        //Validar el tipo de regimen seleccionado
+        db.query("Select tiporegimen, precio from regimen where tipoRegimen = ?", [tipoRegimen], (err, tipohabResult) => {
+            if (err) return res.status(500).json({ error: true, message: "Error en el sistema" });
+            if (tipohabResult === 0) return res.status(404).json({ error: true, message: "El tipo de regimen no existe" });
+
+            const regimen = tipohabResult[0];
+
+            //Validar que el cliente existe
+            db.query("Select * from Cliente where idCliente= ?", [idCliente], (err, clienteResult) => {
+                if (err) return res.status(500).json({ error: true, message: "Error en el sistema" });
+                if (clienteResult === 0) return res.status(404).json({ error: true, message: "El cliente no existe" });
+
+
+                //Validar que la agencia existe
+                db.query("Select * from Agencia where cif= ?", [cif], (err, agenciaResult) => {
+                    if (err) return res.status(500).json({ error: true, message: "Error en el sistema" });
+                    if (agenciaResult === 0) return res.status(404).json({ error: true, message: "La agencia no existe" });
+
+                    const consulta = "Insert into Reserva (dia_entrada, dia_salida, pagado, precio_total, totalPersonas, codigo, tipoRegimen, idCliente, idHabitacion, cif, estado) values (?, ?, 0, ?, ?, ?, ?, ?, ?, ?)";
+                    //Insertar la nueva reserva
+                    db.query(consulta, [checkIn, checkOut, precioTotal, totalPersonas, codigo, tipoRegimen, idCliente, cif], (err, result) => {
+                        if (err) return res.status(500).json({ error: true, message: "Error en el sistema" });
+                        return res.status(201).json({ message: "Reserva creada", reservaId: result.insertId });
+
+                    });
+                });
+            });
+
+        });
+    });
+
 }
 
-module.exports = {getAllAgencias, getNombreAgencia, inicioSesionAgencia, crearAgencia};
+
+
+module.exports = {getAllAgencias, getNombreAgencia, inicioSesionAgencia, crearAgencia, getReservasAgenciaEnFechas, createReserva};

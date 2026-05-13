@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = await res.json();
 
             if (data.error) {
-                alert("Error en la búsqueda");
+                alert(data.message);
                 return;
             }
 
@@ -90,7 +90,7 @@ async function cargarClientes() {
         const data = await res.json();
 
         if (data.error) {
-            alert("Error al cargar clientes");
+            alert(data.message);
             return;
         }
 
@@ -141,7 +141,7 @@ async function cargarDetalleCliente(idCliente) {
         const data = await res.json();
 
         if (data.error) {
-            alert("Cliente no encontrado");
+            alert(data.message);
             return;
         }
 
@@ -164,7 +164,7 @@ async function cargarDetalleCliente(idCliente) {
 
 async function listarReservasCliente(idCliente) {
     const tabla = document.getElementById("listaReservas");
-    const tbody = tabla.querySelector("tbody");;
+    const tbody = tabla.querySelector("tbody");
     try {
         const url = `http://localhost:3000/api/clientes/reservasCliente?idCliente=${idCliente}`
 
@@ -252,7 +252,7 @@ async function borrarCliente(idCliente, boton) {
         const data = await res.json();
 
         if (data.error) {
-            alert("Error al eliminar cliente");
+            alert(data.message);
             return;
         }
 
@@ -295,7 +295,7 @@ document.getElementById("detalleCliente").addEventListener("submit", async funct
         const data = await res.json();
 
         if (data.error) {
-            alert("Error al modificar el cliente");
+            alert(data.message);
             return;
         }
 

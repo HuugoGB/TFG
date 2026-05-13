@@ -117,35 +117,51 @@
                         <!-- Cliente -->
                         <div class="mb-3">
                             <label class="form-label">Cliente</label>
-                            <input type="text" class="form-control" placeholder="Buscar cliente...">
+                            <select class="form-select" id="cliente">
+                                <option value="">Seleccionar cliente</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Personas</label>
+                            <input type="number" class="form-control" id="personas" min="1" max="4">
                         </div>
 
                         <!-- Detalles -->
                         <div class="mb-3">
                             <label class="form-label">Habitación</label>
-                            <input type="text" class="form-control" disabled placeholder="Seleccionar hotel">
+                            <select class="form-select" id="habitacion">
+                                <option value="">Seleccionar tipo de habitacion</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Régimen</label>
-                            <input type="text" class="form-control" disabled>
+                            <select class="form-select" id="regimen">
+                                <option value="">Seleccion régimen</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Fechas</label>
-                            <input type="text" class="form-control" disabled>
+                            <label class="form-label">Fecha Entrada</label>
+                            <input type="date" class="form-control" id="entrada">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Salida</label>
+                            <input type="date" class="form-control" id="salida">
                         </div>
 
                         <!-- Precio -->
                         <div class="mb-3">
-                            <label class="form-label">Total</label>
-                            <input type="text" class="form-control" value="0€" disabled>
+                            <label class="form-label">Precio</label>
+                            <input type="number" class="form-control" id="precio">
                         </div>
 
                         <!-- Acciones -->
                         <div class="d-grid gap-2">
-                            <button class="btn btn-success">Confirmar Reserva</button>
-                            <button class="btn btn-warning">Guardar como Pendiente</button>
+                            <button class="btn btn-success btn-confirmar">Confirmar Reserva</button>
+                            <button class="btn btn-warning btn-pendiente">Guardar como Pendiente</button>
                         </div>
 
                     </div>
@@ -156,39 +172,37 @@
         </div>
 
 
+
         <!-- 🧾 LISTADO DE RESERVAS -->
         <div class="mt-5">
 
-            <!-- 🧾 LISTADO DE RESERVAS -->
-<div class="mt-5">
+            <!-- TÍTULO -->
+            <h5 class="mb-2">Reservas</h5>
 
-    <!-- TÍTULO -->
-    <h5 class="mb-2">Reservas</h5>
+            <!-- 🔎 FILTRO (debajo a la izquierda) -->
+            <div class="card shadow-sm p-2 mb-3" style="max-width: 420px;">
+                <div class="d-flex align-items-end gap-2">
 
-    <!-- 🔎 FILTRO (debajo a la izquierda) -->
-    <div class="card shadow-sm p-2 mb-3" style="max-width: 420px;">
-        <div class="d-flex align-items-end gap-2">
+                    <div>
+                        <label class="form-label small mb-0 fw-bold">Desde</label>
+                        <input id="fechaInicio" type="date" class="form-control form-control-sm">
+                    </div>
 
-            <div>
-                <label class="form-label small mb-0 fw-bold">Desde</label>
-                <input id="fechaInicio" type="date" class="form-control form-control-sm">
+                    <div>
+                        <label class="form-label small mb-0 fw-bold">Hasta</label>
+                        <input id="fechaFinal" type="date" class="form-control form-control-sm">
+                    </div>
+
+                    <div>
+                        <button id="filtrarReservas" class="btn btn-sm btn-primary">
+                            Filtrar
+                        </button>
+                    </div>
+
+                </div>
             </div>
 
-            <div>
-                <label class="form-label small mb-0 fw-bold">Hasta</label>
-                <input id="fechaFinal" type="date" class="form-control form-control-sm">
-            </div>
-
-            <div>
-                <button class="btn btn-sm btn-primary">
-                    Filtrar
-                </button>
-            </div>
-
-        </div>
-    </div>
-
-            <table class="table table-striped mt-3">
+            <table id="reservas" class="table table-striped mt-3">
                 <thead class="table-dark">
                     <tr>
                         <th>Localizador</th>
@@ -230,6 +244,7 @@
         © 2026 GDS Hotel System
     </footer>
 
+    <script src="js/reservas.js"></script>
 </body>
 <script>
     let chart = null;
