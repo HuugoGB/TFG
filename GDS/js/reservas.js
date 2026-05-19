@@ -234,11 +234,10 @@ document.addEventListener("click", function (e) {
     // 👁 VER
     if (e.target.classList.contains("btn-ver")) {
 
-        const id = e.target.dataset.id;
+        const reservaId = e.target.dataset.id;
+        localStorage.setItem("reservaEditarId",reservaId);
 
-        reservaActual = id;
-
-        console.log("Reserva seleccionada:", id);
+        window.location.href = "editarReserva.html"
 
     }
 

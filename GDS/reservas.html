@@ -96,7 +96,7 @@
                                 <h6 class="mb-0">Ingresos estimados</h6>
                             </div>
                             <div class="card-body d-flex justify-content-center align-items-center">
-                                <h4 class="text-muted">€ 2.450</h4>
+                                <h4 id="ingresosTotales" class="text-muted">€ 2.450</h4>
                             </div>
                         </div>
                     </div>
@@ -264,22 +264,34 @@
         });
 
         async function cargarDashboard(fecha) {
+            const cif = localStorage.getItem("agenciaCIF");
+            const url = `http://localhost:3000/api/agencia/infoReservasFecha?fecha=${fecha}&cif=${cif}`;
 
             try {
-                const data = {
-                    reservas: 12,
-                    checkins: 5,
-                    checkouts: 3,
-                    clientes: 20,
-                    ocupacion: [8, 15, 4, 1]
-                };
+                const res = await fetch(url);
+                const dataJSON = await res.json();
+
+                if (dataJSON.error) {
+                    alert(dataJSON.message);
+                    return
+                }
+
+                const data = dataJSON.result[0];
 
                 document.getElementById("statReservasActivas").textContent = data.reservas;
                 document.getElementById("statCheckinsHoy").textContent = data.checkins;
                 document.getElementById("statCheckoutsHoy").textContent = data.checkouts;
                 document.getElementById("statTotalClientes").textContent = data.clientes;
 
-                actualizarGrafico(data.ocupacion);
+                actualizarGrafico([
+                    data.individual,
+                    data.dobles,
+                    data.triples,
+                    data.cuadruples
+                ]);
+
+                document.getElementById("ingresosTotales").textContent =
+            `€ ${Number(data.ingreso).toFixed(2)}`;
 
             } catch (err) {
                 console.error("Error cargando dashboard:", err);
